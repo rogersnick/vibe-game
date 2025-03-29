@@ -16,17 +16,18 @@ interface OfficeElement {
     width: number;
     height: number;
     color: number;
-    borderColor: number;
     category: 'room' | 'furniture' | 'equipment' | 'hazard';
-    material: Material;
-    fragility: Fragility;
+    material: string;
+    fragility: string;
     hp: number;
+    maxHp: number;
     value: number;
+    text?: Phaser.GameObjects.Container | Phaser.GameObjects.Text;
 }
 
 interface LayoutElement {
     rectangle: Phaser.GameObjects.Rectangle;
-    text: Phaser.GameObjects.Text;
+    text?: Phaser.GameObjects.Container | Phaser.GameObjects.Text;
     element: OfficeElement;
 }
 
@@ -88,203 +89,200 @@ export class LayoutGenerator {
 
     // Office elements with their properties
     private readonly OFFICE_ELEMENTS: OfficeElement[] = [
-        // Rooms
-        { 
-            name: 'Cubicle', 
-            width: 120, 
-            height: 100, 
-            color: 0x001835, 
-            borderColor: 0x004657, 
+        // Room variations
+        {
+            name: 'Small Office',
+            width: 100,
+            height: 100,
+            color: 0x001835,
             category: 'room',
             material: 'metal',
             fragility: 'sturdy',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Private Office', 
-            width: 150, 
-            height: 120, 
-            color: 0x001b26, 
-            borderColor: 0x004559, 
+        {
+            name: 'Medium Office',
+            width: 120,
+            height: 120,
+            color: 0x001b26,
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Conference Room', 
-            width: 200, 
-            height: 150, 
-            color: 0x001a27, 
-            borderColor: 0x00455e, 
+        {
+            name: 'Large Office',
+            width: 150,
+            height: 150,
+            color: 0x001a27,
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Break Room', 
-            width: 180, 
-            height: 130, 
-            color: 0x001a2b, 
-            borderColor: 0x007689, 
+        {
+            name: 'Conference Room',
+            width: 130,
+            height: 130,
+            color: 0x001a2b,
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        
         // Furniture
-        { 
-            name: 'Desk', 
-            width: 80, 
-            height: 40, 
-            color: 0x7b111f, 
-            borderColor: 0x370016, 
+        {
+            name: 'Desk',
+            width: 40,
+            height: 40,
+            color: 0x7b111f,
             category: 'furniture',
             material: 'wood',
             fragility: 'normal',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Filing Cabinet', 
-            width: 40, 
-            height: 60, 
-            color: 0x69292f, 
-            borderColor: 0x300621, 
+        {
+            name: 'Cabinet',
+            width: 60,
+            height: 60,
+            color: 0x69292f,
             category: 'furniture',
             material: 'metal',
             fragility: 'sturdy',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Bookshelf', 
-            width: 60, 
-            height: 100, 
-            color: 0x543640, 
-            borderColor: 0x1f122d, 
+        {
+            name: 'Bookshelf',
+            width: 100,
+            height: 100,
+            color: 0x543640,
             category: 'furniture',
             material: 'wood',
             fragility: 'normal',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Meeting Table', 
-            width: 120, 
-            height: 60, 
-            color: 0xbf3825, 
-            borderColor: 0x001b26, 
+        {
+            name: 'Chair',
+            width: 60,
+            height: 60,
+            color: 0xbf3825,
             category: 'furniture',
             material: 'wood',
             fragility: 'sturdy',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        
         // Equipment
-        { 
-            name: 'Printer', 
-            width: 50, 
-            height: 50, 
-            color: 0xa74f3c, 
-            borderColor: 0x001a27, 
+        {
+            name: 'Computer',
+            width: 50,
+            height: 50,
+            color: 0xa74f3c,
             category: 'equipment',
             material: 'plastic',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Computer', 
-            width: 40, 
-            height: 30, 
-            color: 0x8c5f53, 
-            borderColor: 0x001a2b, 
+        {
+            name: 'Printer',
+            width: 30,
+            height: 30,
+            color: 0x8c5f53,
             category: 'equipment',
             material: 'electronic',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Projector', 
-            width: 30, 
-            height: 20, 
-            color: 0xf3714a, 
-            borderColor: 0x373f52, 
+        {
+            name: 'Phone',
+            width: 20,
+            height: 20,
+            color: 0xf3714a,
             category: 'equipment',
             material: 'plastic',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Coffee Machine', 
-            width: 40, 
-            height: 60, 
-            color: 0xdc8060, 
-            borderColor: 0x004559, 
+        {
+            name: 'Filing Cabinet',
+            width: 60,
+            height: 60,
+            color: 0xdc8060,
             category: 'equipment',
             material: 'metal',
             fragility: 'normal',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        
         // Hazards
-        { 
-            name: 'Spilled Coffee', 
-            width: 40, 
-            height: 40, 
-            color: 0xc48c76, 
-            borderColor: 0x00455e, 
+        {
+            name: 'Spilled Coffee',
+            width: 40,
+            height: 40,
+            color: 0xc48c76,
             category: 'hazard',
             material: 'fabric',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Loose Wires', 
-            width: 30, 
-            height: 30, 
-            color: 0xffbc9f, 
-            borderColor: 0x007689, 
+        {
+            name: 'Exposed Wires',
+            width: 30,
+            height: 30,
+            color: 0xffbc9f,
             category: 'hazard',
             material: 'electronic',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Paper Stack', 
-            width: 30, 
-            height: 40, 
-            color: 0x8dd8ed, 
-            borderColor: 0x347482, 
+        {
+            name: 'Paper Stack',
+            width: 40,
+            height: 40,
+            color: 0x8dd8ed,
             category: 'hazard',
             material: 'paper',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         },
-        { 
-            name: 'Broken Printer', 
-            width: 50, 
-            height: 50, 
-            color: 0xb2d2d7, 
-            borderColor: 0xa7968d, 
+        {
+            name: 'Broken Glass',
+            width: 50,
+            height: 50,
+            color: 0xb2d2d7,
             category: 'hazard',
             material: 'plastic',
             fragility: 'fragile',
             hp: 0,
+            maxHp: 0,
             value: 0
         }
     ];
@@ -304,8 +302,8 @@ export class LayoutGenerator {
         const baseHP = element.width * element.height;
         
         // Apply material and fragility multipliers
-        const materialMultiplier = this.MATERIAL_HP_MULTIPLIERS[element.material];
-        const fragilityMultiplier = this.FRAGILITY_MULTIPLIERS[element.fragility];
+        const materialMultiplier = this.MATERIAL_HP_MULTIPLIERS[element.material as Material];
+        const fragilityMultiplier = this.FRAGILITY_MULTIPLIERS[element.fragility as Fragility];
         
         // Calculate final HP
         return Math.round(baseHP * materialMultiplier * fragilityMultiplier);
@@ -316,8 +314,8 @@ export class LayoutGenerator {
         const baseValue = element.width * element.height;
         
         // Apply multipliers
-        const materialMultiplier = this.MATERIAL_VALUE_MULTIPLIERS[element.material];
-        const fragilityMultiplier = this.FRAGILITY_VALUE_MULTIPLIERS[element.fragility];
+        const materialMultiplier = this.MATERIAL_VALUE_MULTIPLIERS[element.material as Material];
+        const fragilityMultiplier = this.FRAGILITY_VALUE_MULTIPLIERS[element.fragility as Fragility];
         const categoryMultiplier = this.CATEGORY_VALUE_MULTIPLIERS[element.category];
         
         // Calculate final value
@@ -359,33 +357,19 @@ export class LayoutGenerator {
             width: this.roomConfig.width,
             height: this.roomConfig.height,
             color: 0x001835,
-            borderColor: 0x004657,
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
             hp: 0,
+            maxHp: 0,
             value: 0
         };
         mainOfficeElement.hp = this.calculateHP(mainOfficeElement);
         mainOfficeElement.value = this.calculateValue(mainOfficeElement);
 
-        const roomText = this.scene.add.text(
-            room.x,
-            room.y - this.roomConfig.height/2 + 20,
-            `Main Office\nHP: ${mainOfficeElement.hp}\nValue: ${mainOfficeElement.value}\nMaterial: ${mainOfficeElement.material}\nFragility: ${mainOfficeElement.fragility}`,
-            {
-                fontSize: '16px',
-                color: '#ffffff',
-                backgroundColor: '#001835',
-                padding: { x: 5, y: 2 },
-                align: 'center'
-            }
-        )
-        .setOrigin(0.5, 0)
-        .setDepth(0)
-        .setVisible(false); // Initially hidden
+        this.createElementText(mainOfficeElement, room.x, room.y - this.roomConfig.height/2 + 20);
 
-        this.currentLayout.push({ rectangle: room, text: roomText, element: mainOfficeElement });
+        this.currentLayout.push({ rectangle: room, text: mainOfficeElement.text!, element: mainOfficeElement });
 
         // Generate random office elements (up to 20)
         const elementCount = this.getRandomNumber(10, 20, 15);
@@ -406,27 +390,13 @@ export class LayoutGenerator {
                     element.height,
                     element.color
                 )
-                .setStrokeStyle(1, element.borderColor)
+                .setStrokeStyle(1, element.color)
                 .setAlpha(0.6)
                 .setDepth(-1);
 
-                const text = this.scene.add.text(
-                    position.x,
-                    position.y - element.height/2 - 20,
-                    `${element.name}\nHP: ${element.hp}\nValue: ${element.value}\nMaterial: ${element.material}\nFragility: ${element.fragility}`,
-                    {
-                        fontSize: '12px',
-                        color: '#ffffff',
-                        backgroundColor: element.color.toString(16),
-                        padding: { x: 3, y: 1 },
-                        align: 'center'
-                    }
-                )
-                .setOrigin(0.5, 0)
-                .setDepth(0)
-                .setVisible(false); // Initially hidden
+                this.createElementText(element, position.x, position.y - element.height/2 - 20);
 
-                this.currentLayout.push({ rectangle: obstacle, text: text, element: element });
+                this.currentLayout.push({ rectangle: obstacle, text: element.text!, element: element });
                 placedElements.push(element);
             }
         }
@@ -571,7 +541,7 @@ export class LayoutGenerator {
     private clearLayout(): void {
         this.currentLayout.forEach(layoutElement => {
             layoutElement.rectangle.destroy();
-            layoutElement.text.destroy();
+            layoutElement.text?.destroy();
         });
         this.currentLayout = [];
         this.roomConfig = null;
@@ -582,21 +552,114 @@ export class LayoutGenerator {
         delete (this.scene as any).layoutGenerator;
     }
 
+    private createElementText(element: OfficeElement, x: number, y: number): void {
+        const textStyle = {
+            fontSize: '14px',
+            fontFamily: 'Arial',
+            align: 'center',
+            wordWrap: { width: 150 },
+            backgroundColor: '#000000',
+            padding: { x: 8, y: 4 }
+        };
+
+        // Create a container for the text elements
+        const container = this.scene.add.container(x, y);
+        container.setDepth(2);
+        container.setAlpha(0);
+        element.text = container;
+
+        // Create text elements with different colors based on the element's properties
+        const nameText = this.scene.add.text(0, 0, element.name, {
+            ...textStyle,
+            color: '#ffffff',
+            fontSize: '16px'
+        }).setOrigin(0.5, 0);
+
+        const hpText = this.scene.add.text(0, 25, `HP: ${element.hp}`, {
+            ...textStyle,
+            color: element.hp > element.maxHp * 0.7 ? '#4CAF50' : 
+                   element.hp > element.maxHp * 0.3 ? '#FFC107' : '#F44336'
+        }).setOrigin(0.5, 0);
+
+        const valueText = this.scene.add.text(0, 45, `Value: ${element.value}`, {
+            ...textStyle,
+            color: '#FFD700'
+        }).setOrigin(0.5, 0);
+
+        const materialText = this.scene.add.text(0, 65, element.material, {
+            ...textStyle,
+            color: '#64B5F6'
+        }).setOrigin(0.5, 0);
+
+        const fragilityText = this.scene.add.text(0, 85, element.fragility, {
+            ...textStyle,
+            color: element.fragility === 'fragile' ? '#F44336' : 
+                   element.fragility === 'normal' ? '#4CAF50' : 
+                   element.fragility === 'sturdy' ? '#2196F3' : '#9C27B0'
+        }).setOrigin(0.5, 0);
+
+        // Add all text elements to the container
+        container.add([nameText, hpText, valueText, materialText, fragilityText]);
+
+        // Add a background rectangle
+        const padding = 10;
+        const width = Math.max(
+            nameText.width,
+            hpText.width,
+            valueText.width,
+            materialText.width,
+            fragilityText.width
+        ) + padding * 2;
+        const height = fragilityText.y + fragilityText.height + padding * 2;
+
+        const background = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.1);
+        background.setOrigin(0.5, 0);
+        container.addAt(background, 0);
+
+        // Add a border with the element's color
+        const border = this.scene.add.rectangle(0, 0, width, height, element.color, 0.3);
+        border.setOrigin(0.5, 0);
+        
+        // Use thicker border for room elements
+        const borderWidth = element.category === 'room' ? 4 : 2;
+        const borderAlpha = element.category === 'room' ? 0.8 : 0.5;
+        border.setStrokeStyle(borderWidth, element.color, borderAlpha);
+        container.addAt(border, 1);
+
+        // Add an outer glow for room elements
+        if (element.category === 'room') {
+            const glow = this.scene.add.rectangle(0, 0, width + 8, height + 8, element.color, 0.2);
+            glow.setOrigin(0.5, 0);
+            glow.setStrokeStyle(1, element.color, 0.3);
+            container.addAt(glow, 0);
+        }
+    }
+
     private updateTextVisibility(): void {
         const playerPos = this.player.getPosition();
-        const playerX = playerPos.x;
-        const playerY = playerPos.y;
+        const TEXT_VISIBILITY_DISTANCE = 150;
 
-        this.currentLayout.forEach(layoutElement => {
-            const distance = Phaser.Math.Distance.Between(
-                playerX,
-                playerY,
-                layoutElement.rectangle.x,
-                layoutElement.rectangle.y
-            );
+        this.currentLayout.forEach(element => {
+            if (element.text) {
+                const distance = Phaser.Math.Distance.Between(
+                    playerPos.x, playerPos.y,
+                    element.rectangle.x, element.rectangle.y
+                );
 
-            // Show text only if player is within visibility distance
-            layoutElement.text.setVisible(distance <= this.TEXT_VISIBILITY_DISTANCE);
+                // Smoothly fade in/out based on distance
+                const targetAlpha = distance < TEXT_VISIBILITY_DISTANCE ? 1 : 0;
+                const currentAlpha = element.text.alpha;
+                const newAlpha = Phaser.Math.Linear(currentAlpha, targetAlpha, 0.1);
+                element.text.setAlpha(newAlpha);
+
+                // Scale based on distance
+                const scale = Phaser.Math.Clamp(
+                    1 - (distance / TEXT_VISIBILITY_DISTANCE),
+                    0.8,
+                    1.2
+                );
+                element.text.setScale(scale);
+            }
         });
     }
 } 

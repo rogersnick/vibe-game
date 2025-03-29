@@ -5,6 +5,7 @@ import { StepCounterUI } from '../systems/achievements/StepCounterUI';
 import { InputHandler } from '../input/InputHandler';
 import { MoveCommand } from '../input/commands/MoveCommand';
 import { CollectibleSpawner } from '../entities/CollectibleSpawner';
+import { LayoutGenerator } from '../systems/layout/LayoutGenerator';
 
 export class GameScene extends Scene {
     private player!: Player;
@@ -13,6 +14,7 @@ export class GameScene extends Scene {
     private inputHandler!: InputHandler;
     private playerVisual!: Phaser.GameObjects.Shape;
     private collectibleSpawner!: CollectibleSpawner;
+    private layoutGenerator!: LayoutGenerator;
     private spawnTimer: number = 0;
     private inventoryText!: Phaser.GameObjects.Text;
 
@@ -61,10 +63,11 @@ export class GameScene extends Scene {
         // Initialize collectible spawner
         this.collectibleSpawner = new CollectibleSpawner(this, this.player);
         
-        // Spawn initial collectibles
-        for (let i = 0; i < 5; i++) {
-            this.collectibleSpawner.spawnRandomCollectible();
-        }
+        // Initialize layout generator
+        this.layoutGenerator = new LayoutGenerator(this, this.player, this.collectibleSpawner);
+        
+        // Generate initial layout
+        this.layoutGenerator.generateNewLayout();
 
         // Create inventory counter
         this.inventoryText = this.add.text(16, 16, 'Items: 0', {
@@ -142,6 +145,7 @@ export class GameScene extends Scene {
         this.inputHandler.destroy();
         this.playerVisual.destroy();
         this.collectibleSpawner.destroy();
+        this.layoutGenerator.destroy();
         this.inventoryText.destroy();
     }
 } 

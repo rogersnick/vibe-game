@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
 import { Inventory } from './Inventory';
+import { Logger } from '../utils/Logger';
 
 export enum Direction {
     LEFT = 'left',
@@ -41,6 +42,17 @@ export class Player {
         this.inventory = new Inventory();
         this.setupSprite();
         this.setupEnergyBar();
+        
+        // Set up inventory callback for achievements
+        this.inventory.setOnItemCollectedCallback((count) => {
+            Logger.debug('Item collected, count:', count);
+            if (this.achievementObserver) {
+                Logger.debug('Notifying achievement observer');
+                this.achievementObserver.onAchievementEvent(AchievementEvent.COLLECTIBLE_FOUND, { itemCount: count });
+            } else {
+                Logger.warn('No achievement observer set');
+            }
+        });
     }
 
     private setupSprite(): void {
@@ -143,12 +155,7 @@ export class Player {
 
         // Set up animation completion listener after all animations are created
         this.sprite.on('animationcomplete', (animation: Phaser.Animations.Animation) => {
-            console.log('Animation completed:', animation.key); // Debug log
-            if (animation.key.startsWith('death_')) {
-                console.log('Death animation completed, starting game over'); // Debug log
-                this.isDead = true;
-                this.scene.scene.start('GameOverScene', { inventory: this.inventory });
-            }
+            this.onDeathAnimationComplete(animation);
         });
     }
 
@@ -372,6 +379,16 @@ export class Player {
         this.updateEnergyBar();
         if (this.currentEnergy === 0 && !this.isDead) {
             this.die();
+        }
+    }
+
+    private onDeathAnimationComplete(animation: Phaser.Animations.Animation): void {
+        Logger.debug('Animation completed:', animation.key);
+        if (animation.key === 'death') {
+            Logger.debug('Death animation completed, starting game over');
+            this.scene.scene.start('GameOverScene', {
+                inventory: this.inventory
+            });
         }
     }
 } 

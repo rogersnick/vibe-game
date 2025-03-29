@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { Logger } from '../utils/Logger';
 
 export class MenuScene extends Scene {
   constructor() {
@@ -7,7 +8,7 @@ export class MenuScene extends Scene {
 
   create(): void {
     // Add title
-    const title = this.add.text(this.cameras.main.centerX, 200, 'Vibe Game', {
+    const title = this.add.text(this.cameras.main.centerX, 200, 'Item Collector', {
       font: '64px monospace',
       color: '#ffffff'
     });
@@ -37,14 +38,22 @@ export class MenuScene extends Scene {
         this.scene.start('GameScene');
         break;
       case 'Options':
-        // TODO: Implement options menu
-        console.log('Options selected');
+        this.handleOptionsClick();
         break;
       case 'Credits':
-        // TODO: Implement credits screen
-        console.log('Credits selected');
+        this.handleCreditsClick();
         break;
     }
+  }
+
+  private handleOptionsClick(): void {
+    Logger.info('Options selected');
+    this.scene.start('OptionsScene');
+  }
+
+  private handleCreditsClick(): void {
+    Logger.info('Credits selected');
+    this.scene.start('CreditsScene');
   }
 
   update(): void {

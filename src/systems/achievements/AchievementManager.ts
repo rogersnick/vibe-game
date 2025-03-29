@@ -1,4 +1,5 @@
 import { Achievement, AchievementEvent, AchievementObserver } from './types';
+import { Logger } from '../../utils/Logger';
 
 export class AchievementManager implements AchievementObserver {
     private achievements: Map<string, Achievement>;
@@ -38,11 +39,11 @@ export class AchievementManager implements AchievementObserver {
         this.achievements.set('explorer', {
             id: 'explorer',
             title: 'Explorer',
-            description: 'Move 1000 steps',
+            description: 'Move 600 steps',
             isUnlocked: false,
             progress: {
                 current: 0,
-                target: 1000
+                target: 600
             }
         });
 
@@ -56,6 +57,18 @@ export class AchievementManager implements AchievementObserver {
                 target: 10000
             }
         });
+
+        // Add item collection achievements
+        this.achievements.set('collector', {
+            id: 'collector',
+            title: 'Collector',
+            description: 'Collect 5 items',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 5
+            }
+        });
     }
 
     public setOnUnlockCallback(callback: (achievement: Achievement) => void): void {
@@ -63,12 +76,16 @@ export class AchievementManager implements AchievementObserver {
     }
 
     public onAchievementEvent(event: AchievementEvent, data?: any): void {
+        Logger.debug('Achievement event received:', event, data);
         switch (event) {
             case AchievementEvent.LEVEL_COMPLETED:
                 this.handleLevelCompleted(data);
                 break;
             case AchievementEvent.PLAYER_STEP:
                 this.handlePlayerStep();
+                break;
+            case AchievementEvent.COLLECTIBLE_FOUND:
+                this.handleCollectibleFound(data);
                 break;
             // Add more event handlers as needed
         }
@@ -106,7 +123,32 @@ export class AchievementManager implements AchievementObserver {
         });
     }
 
+    private handleCollectibleFound(data: any): void {
+        Logger.debug('Collectible found, current count:', data.itemCount);
+        const collector = this.achievements.get('collector');
+        if (collector && collector.progress) {
+            collector.progress.current = data.itemCount;
+            Logger.debug('Collector achievement progress:', collector.progress.current, '/', collector.progress.target);
+            
+            if (collector.progress.current >= collector.progress.target && !collector.isUnlocked) {
+                Logger.debug('Unlocking collector achievement!');
+                this.unlockAchievement(collector);
+            }
+        }
+    }
+
+    private unlockAchievement(achievement: Achievement): void {
+        if (!achievement.isUnlocked) {
+            achievement.isUnlocked = true;
+            Logger.debug('Achievement unlocked:', achievement.title);
+            if (this.onUnlockCallback) {
+                this.onUnlockCallback(achievement);
+            }
+        }
+    }
+
     public onAchievementUnlocked(achievement: Achievement): void {
+        console.log('Achievement unlocked:', achievement.title); // Debug log
         if (this.onUnlockCallback) {
             this.onUnlockCallback(achievement);
         }

@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { Player } from './Player';
+import { Logger } from '../utils/Logger';
 
 export class Collectible {
     private scene: Scene;
@@ -48,8 +49,10 @@ export class Collectible {
     }
 
     private collect(player: Player): void {
+        Logger.debug('Collectible collected');
         this.isCollected = true;
         player.getInventory().addItem();
+        Logger.debug('Item added to inventory');
         
         // Add collection effect
         this.scene.tweens.add({

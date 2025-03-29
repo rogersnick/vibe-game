@@ -86,39 +86,91 @@ export class GameScene extends Scene {
             this.spawnTimer = 0;
             this.collectibleSpawner.spawnRandomCollectible();
         }
+
+        // Check for game over condition
+        if (this.player.isPlayerDead()) {
+            this.handleGameOver();
+        }
+    }
+
+    private handleGameOver(): void {
+        // Get all achievements
+        const achievements = this.achievementManager.getAchievements();
+        
+        // Start the game over scene with achievements and inventory
+        this.scene.start('GameOverScene', {
+            inventory: this.player.getInventory(),
+            achievements: achievements || [] // Ensure we always pass an array
+        });
     }
 
     private showAchievementUnlock(achievement: any): void {
-        // Create a temporary text to show achievement unlock
-        const text = this.add.text(
-            this.cameras.main.centerX,
-            100,
-            `Achievement Unlocked: ${achievement.title}!`,
-            {
-                fontSize: '32px',
-                color: '#ffffff',
-                backgroundColor: '#000000',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5);
-
-        // Animate the text
+        // Create a container for the achievement notification
+        const container = this.add.container(this.cameras.main.centerX, -100);
+        
+        // Create a background box
+        const box = this.add.rectangle(0, 0, 400, 80, 0x000000, 0.8);
+        box.setStrokeStyle(2, 0x00ff00);
+        box.setOrigin(0.5);
+        
+        // Create achievement icon (a simple star for now)
+        const icon = this.add.text(-160, 0, '⭐', {
+            fontSize: '40px',
+            color: '#ffd700'
+        }).setOrigin(0.5);
+        
+        // Create achievement text with gradient effect
+        const title = this.add.text(-100, -15, achievement.title, {
+            fontSize: '24px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+        
+        const description = this.add.text(-100, 15, 'Achievement Unlocked!', {
+            fontSize: '18px',
+            color: '#00ff00'
+        }).setOrigin(0, 0.5);
+        
+        // Add all elements to the container
+        container.add([box, icon, title, description]);
+        
+        // Animate the notification
         this.tweens.add({
-            targets: text,
-            y: 50,
-            duration: 1000,
-            ease: 'Power2',
+            targets: container,
+            y: 100,
+            duration: 800,
+            ease: 'Back.out',
             onComplete: () => {
-                // Fade out and destroy
-                this.tweens.add({
-                    targets: text,
-                    alpha: 0,
-                    duration: 1000,
-                    delay: 2000,
-                    onComplete: () => text.destroy()
+                // Wait a bit then animate out
+                this.time.delayedCall(2000, () => {
+                    this.tweens.add({
+                        targets: container,
+                        y: -100,
+                        alpha: 0,
+                        duration: 600,
+                        ease: 'Back.in',
+                        onComplete: () => container.destroy()
+                    });
                 });
             }
         });
+        
+        // Add a particle effect
+        const particles = this.add.particles(0, 0, 'particle', {
+            x: this.cameras.main.centerX,
+            y: 100,
+            speed: { min: 200, max: 400 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.6, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 1000,
+            quantity: 20,
+            blendMode: 'ADD',
+            tint: 0x00ff00
+        });
+        
+        // Destroy particles after animation
+        this.time.delayedCall(1000, () => particles.destroy());
     }
 
     shutdown(): void {

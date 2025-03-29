@@ -11,7 +11,6 @@ export class GameScene extends Scene {
     private achievementManager!: AchievementManager;
     private stepCounterUI!: StepCounterUI;
     private inputHandler!: InputHandler;
-    private playerVisual!: Phaser.GameObjects.Shape;
     private collectibleSpawner!: CollectibleSpawner;
     private spawnTimer: number = 0;
     private inventoryText!: Phaser.GameObjects.Text;
@@ -60,9 +59,6 @@ export class GameScene extends Scene {
             this.showAchievementUnlock(achievement);
         });
 
-        // Add a simple visual representation of the player (temporary)
-        this.playerVisual = this.add.circle(centerX, centerY, 16, 0x00ff00);
-
         // Initialize collectible spawner
         this.collectibleSpawner = new CollectibleSpawner(this, this.player);
         
@@ -89,10 +85,6 @@ export class GameScene extends Scene {
         
         // Update player (this will check for steps)
         this.player.update();
-        
-        // Update visual representation
-        const playerPos = this.player.getPosition();
-        this.playerVisual.setPosition(playerPos.x, playerPos.y);
         
         // Update UI
         this.stepCounterUI.update();
@@ -145,7 +137,6 @@ export class GameScene extends Scene {
         this.stepCounterUI.destroy();
         this.player.destroy();
         this.inputHandler.destroy();
-        this.playerVisual.destroy();
         this.collectibleSpawner.destroy();
         this.inventoryText.destroy();
     }

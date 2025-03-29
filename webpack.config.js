@@ -11,6 +11,13 @@ const rendererConfig = {
         test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/
+      },
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[path][name][ext]'
+        }
       }
     ]
   },
@@ -25,9 +32,15 @@ const rendererConfig = {
     path: path.resolve(__dirname, 'dist')
   },
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
+    static: [
+      {
+        directory: path.join(__dirname, 'dist'),
+      },
+      {
+        directory: path.join(__dirname, 'assets'),
+        publicPath: '/assets'
+      }
+    ],
     compress: true,
     port: 9000,
     hot: true

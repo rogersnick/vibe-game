@@ -2,6 +2,13 @@ import { Scene } from 'phaser';
 import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
 import { Inventory } from './Inventory';
 
+export enum Direction {
+    LEFT = 'left',
+    RIGHT = 'right',
+    DOWN = 'down',
+    UP = 'up'
+}
+
 export class Player {
     private scene: Scene;
     private x: number;
@@ -14,12 +21,92 @@ export class Player {
     private inventory: Inventory;
     private activeKeys: Set<string> = new Set();
     private isRunning: boolean = false;
+    private sprite!: Phaser.GameObjects.Sprite;
+    private lastDirection: Direction = Direction.DOWN;
 
     constructor(scene: Scene, x: number, y: number) {
         this.scene = scene;
         this.x = x;
         this.y = y;
         this.inventory = new Inventory();
+        this.setupSprite();
+    }
+
+    private setupSprite(): void {
+        // Create the sprite
+        this.sprite = this.scene.add.sprite(this.x, this.y, 'character_idle');
+        
+        this.sprite.setScale(2.0);
+        
+        // Set up animations
+        // Idle animations for each direction
+        this.scene.anims.create({
+            key: 'idle_right',
+            frames: this.scene.anims.generateFrameNumbers('character_idle', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'idle_down',
+            frames: this.scene.anims.generateFrameNumbers('character_idle', { start: 4, end: 7 }),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'idle_up',
+            frames: this.scene.anims.generateFrameNumbers('character_idle', { start: 8, end: 11 }),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        // Walk animations for each direction
+        this.scene.anims.create({
+            key: 'walk_right',
+            frames: this.scene.anims.generateFrameNumbers('character_walk', { start: 0, end: 7 }),
+            frameRate: 12,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'walk_down',
+            frames: this.scene.anims.generateFrameNumbers('character_walk', { start: 8, end: 15 }),
+            frameRate: 12,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'walk_up',
+            frames: this.scene.anims.generateFrameNumbers('character_walk', { start: 16, end: 23 }),
+            frameRate: 12,
+            repeat: -1
+        });
+
+        // Run animations for each direction
+        this.scene.anims.create({
+            key: 'run_right',
+            frames: this.scene.anims.generateFrameNumbers('character_run', { start: 0, end: 7 }),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'run_down',
+            frames: this.scene.anims.generateFrameNumbers('character_run', { start: 8, end: 15 }),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'run_up',
+            frames: this.scene.anims.generateFrameNumbers('character_run', { start: 16, end: 23 }),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        // Start with idle down animation
+        this.sprite.play('idle_down');
     }
 
     addAchievementObserver(observer: AchievementObserver): void {
@@ -35,6 +122,60 @@ export class Player {
         this.activeKeys.add(key);
         this.dx = dx;
         this.dy = dy;
+
+        // Update last direction based on movement
+        if (dx > 0) this.lastDirection = Direction.RIGHT;
+        else if (dx < 0) this.lastDirection = Direction.LEFT;
+        else if (dy > 0) this.lastDirection = Direction.DOWN;
+        else if (dy < 0) this.lastDirection = Direction.UP;
+
+        // Update animation based on direction
+        this.updateAnimation();
+    }
+
+    private updateAnimation(): void {
+        if (this.dx === 0 && this.dy === 0) {
+            // When not moving, play idle animation in last direction
+            switch (this.lastDirection) {
+                case Direction.LEFT:
+                    this.sprite.setFlipX(true);
+                    this.sprite.play('idle_right', true);
+                    break;
+                case Direction.RIGHT:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play('idle_right', true);
+                    break;
+                case Direction.DOWN:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play('idle_down', true);
+                    break;
+                case Direction.UP:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play('idle_up', true);
+                    break;
+            }
+        } else {
+            // When moving, play walk or run animation based on isRunning state
+            const prefix = this.isRunning ? 'run_' : 'walk_';
+            switch (this.lastDirection) {
+                case Direction.LEFT:
+                    this.sprite.setFlipX(true);
+                    this.sprite.play(prefix + 'right', true);
+                    break;
+                case Direction.RIGHT:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play(prefix + 'right', true);
+                    break;
+                case Direction.DOWN:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play(prefix + 'down', true);
+                    break;
+                case Direction.UP:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play(prefix + 'up', true);
+                    break;
+            }
+        }
     }
 
     stopMoving(key: string): void {
@@ -42,6 +183,7 @@ export class Player {
         if (this.activeKeys.size === 0) {
             this.dx = 0;
             this.dy = 0;
+            this.updateAnimation();
         }
     }
 
@@ -55,6 +197,9 @@ export class Player {
         const height = this.scene.cameras.main.height;
         this.x = Phaser.Math.Clamp(this.x, 0, width);
         this.y = Phaser.Math.Clamp(this.y, 0, height);
+
+        // Update sprite position
+        this.sprite.setPosition(this.x, this.y);
 
         // Check for steps (for achievement system)
         if (this.dx !== 0 || this.dy !== 0) {
@@ -71,6 +216,6 @@ export class Player {
     }
 
     destroy(): void {
-        // Clean up if needed
+        this.sprite.destroy();
     }
 } 

@@ -37,7 +37,22 @@ export class PreloadScene extends Scene {
     });
 
     // Load game assets here
-    // Create a temporary colored rectangle for the player
+    this.load.spritesheet('character_idle', 'assets/character/idle.png', {
+        frameWidth: 80,
+        frameHeight: 80
+    });
+
+    this.load.spritesheet('character_run', 'assets/character/run.png', {
+        frameWidth: 80,
+        frameHeight: 80
+    });
+
+    this.load.spritesheet('character_walk', 'assets/character/walk.png', {
+        frameWidth: 80,
+        frameHeight: 80
+    });
+
+    // Create a temporary colored rectangle for the player (can be removed later)
     const graphics = this.add.graphics();
     graphics.fillStyle(0x00ff00);
     graphics.fillRect(0, 0, 32, 32);

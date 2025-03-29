@@ -1,52 +1,59 @@
 import { Scene } from 'phaser';
-import { BaseAchievementSubject } from '../systems/achievements/AchievementSubject';
-import { AchievementEvent } from '../systems/achievements/types';
+import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
+import { Inventory } from './Inventory';
 
-export class Player extends BaseAchievementSubject {
+export class Player {
     private scene: Scene;
-    private speed: number = 200;
-    private lastPosition: { x: number; y: number };
-    private stepThreshold: number = 16; // Minimum pixels moved to count as a step
-    private isMoving: boolean = false;
-    private position: { x: number; y: number };
+    private x: number;
+    private y: number;
+    private speed: number = 5;
+    private dx: number = 0;
+    private dy: number = 0;
+    private achievementObserver: AchievementObserver | null = null;
+    private inventory: Inventory;
 
     constructor(scene: Scene, x: number, y: number) {
-        super();
         this.scene = scene;
-        this.position = { x, y };
-        this.lastPosition = { x, y };
+        this.x = x;
+        this.y = y;
+        this.inventory = new Inventory();
     }
 
-    public update(): void {
-        // Check if we've moved enough to count as a step
-        const distance = Phaser.Math.Distance.Between(
-            this.lastPosition.x,
-            this.lastPosition.y,
-            this.position.x,
-            this.position.y
-        );
+    addAchievementObserver(observer: AchievementObserver): void {
+        this.achievementObserver = observer;
+    }
 
-        if (distance >= this.stepThreshold) {
-            this.notifyAchievementObservers(AchievementEvent.PLAYER_STEP);
-            this.lastPosition = { ...this.position };
+    move(dx: number, dy: number): void {
+        this.dx = dx;
+        this.dy = dy;
+    }
+
+    update(): void {
+        // Update position
+        this.x += this.dx * this.speed;
+        this.y += this.dy * this.speed;
+
+        // Keep player in bounds
+        const width = this.scene.cameras.main.width;
+        const height = this.scene.cameras.main.height;
+        this.x = Phaser.Math.Clamp(this.x, 0, width);
+        this.y = Phaser.Math.Clamp(this.y, 0, height);
+
+        // Check for steps (for achievement system)
+        if (this.dx !== 0 || this.dy !== 0) {
+            this.achievementObserver?.onAchievementEvent(AchievementEvent.PLAYER_STEP);
         }
     }
 
-    public move(dx: number, dy: number): void {
-        this.position.x += dx;
-        this.position.y += dy;
-        this.isMoving = true;
+    getPosition(): { x: number; y: number } {
+        return { x: this.x, y: this.y };
     }
 
-    public getPosition(): { x: number; y: number } {
-        return { ...this.position };
+    getInventory(): Inventory {
+        return this.inventory;
     }
 
-    public isPlayerMoving(): boolean {
-        return this.isMoving;
-    }
-
-    public destroy(): void {
-        // Clean up any resources if needed
+    destroy(): void {
+        // Clean up if needed
     }
 } 

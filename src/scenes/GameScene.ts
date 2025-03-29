@@ -4,6 +4,7 @@ import { AchievementManager } from '../systems/achievements/AchievementManager';
 import { StepCounterUI } from '../systems/achievements/StepCounterUI';
 import { InputHandler } from '../input/InputHandler';
 import { MoveCommand } from '../input/commands/MoveCommand';
+import { CollectibleSpawner } from '../entities/CollectibleSpawner';
 
 export class GameScene extends Scene {
     private player!: Player;
@@ -11,6 +12,9 @@ export class GameScene extends Scene {
     private stepCounterUI!: StepCounterUI;
     private inputHandler!: InputHandler;
     private playerVisual!: Phaser.GameObjects.Shape;
+    private collectibleSpawner!: CollectibleSpawner;
+    private spawnTimer: number = 0;
+    private inventoryText!: Phaser.GameObjects.Text;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -47,6 +51,25 @@ export class GameScene extends Scene {
 
         // Add a simple visual representation of the player (temporary)
         this.playerVisual = this.add.circle(centerX, centerY, 16, 0x00ff00);
+
+        // Initialize collectible spawner
+        this.collectibleSpawner = new CollectibleSpawner(this, this.player);
+        
+        // Spawn initial collectibles
+        for (let i = 0; i < 5; i++) {
+            this.collectibleSpawner.spawnRandomCollectible();
+        }
+
+        // Create inventory counter
+        this.inventoryText = this.add.text(16, 16, 'Items: 0', {
+            fontSize: '24px',
+            color: '#ffffff'
+        });
+
+        // Set up inventory callback
+        this.player.getInventory().setOnItemCollectedCallback((count) => {
+            this.inventoryText.setText(`Items: ${count}`);
+        });
     }
 
     update(): void {
@@ -62,6 +85,16 @@ export class GameScene extends Scene {
         
         // Update UI
         this.stepCounterUI.update();
+
+        // Update collectibles (check for collection)
+        this.collectibleSpawner.update();
+
+        // Spawn new collectibles periodically
+        this.spawnTimer += this.game.loop.delta;
+        if (this.spawnTimer >= 5000) { // Spawn every 5 seconds
+            this.spawnTimer = 0;
+            this.collectibleSpawner.spawnRandomCollectible();
+        }
     }
 
     private showAchievementUnlock(achievement: any): void {
@@ -102,5 +135,7 @@ export class GameScene extends Scene {
         this.player.destroy();
         this.inputHandler.destroy();
         this.playerVisual.destroy();
+        this.collectibleSpawner.destroy();
+        this.inventoryText.destroy();
     }
 } 

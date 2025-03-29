@@ -1,4 +1,4 @@
 export interface Command {
-  execute(): void;
+  execute(delta: number): void;
   undo?(): void;
 } 

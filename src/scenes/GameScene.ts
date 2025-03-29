@@ -5,6 +5,7 @@ import { StepCounterUI } from '../systems/achievements/StepCounterUI';
 import { InputHandler } from '../input/InputHandler';
 import { MoveCommand } from '../input/commands/MoveCommand';
 import { CollectibleSpawner } from '../entities/CollectibleSpawner';
+import { LayoutGenerator } from '../systems/layout/LayoutGenerator';
 
 export class GameScene extends Scene {
     private player!: Player;
@@ -12,6 +13,7 @@ export class GameScene extends Scene {
     private stepCounterUI!: StepCounterUI;
     private inputHandler!: InputHandler;
     private collectibleSpawner!: CollectibleSpawner;
+    private layoutGenerator!: LayoutGenerator;
     private spawnTimer: number = 0;
     private inventoryText!: Phaser.GameObjects.Text;
 
@@ -54,6 +56,12 @@ export class GameScene extends Scene {
             });
         }
 
+        // Set up movement commands (Arrow Keys)
+        this.inputHandler.bindKey('UP', new MoveCommand(this.player, 0, -1, 'UP'), true);    // Up
+        this.inputHandler.bindKey('DOWN', new MoveCommand(this.player, 0, 1, 'DOWN'), true);   // Down
+        this.inputHandler.bindKey('LEFT', new MoveCommand(this.player, -1, 0, 'LEFT'), true);  // Left
+        this.inputHandler.bindKey('RIGHT', new MoveCommand(this.player, 1, 0, 'RIGHT'), true);  // Right
+
         // Set up achievement unlock callback
         this.achievementManager.setOnUnlockCallback((achievement) => {
             this.showAchievementUnlock(achievement);
@@ -62,10 +70,11 @@ export class GameScene extends Scene {
         // Initialize collectible spawner
         this.collectibleSpawner = new CollectibleSpawner(this, this.player);
         
-        // Spawn initial collectibles
-        for (let i = 0; i < 5; i++) {
-            this.collectibleSpawner.spawnRandomCollectible();
-        }
+        // Initialize layout generator
+        this.layoutGenerator = new LayoutGenerator(this, this.player, this.collectibleSpawner);
+
+        // Generate initial layout
+        this.layoutGenerator.generateNewLayout();
 
         // Create inventory counter
         this.inventoryText = this.add.text(16, 56, 'Items: 0', {
@@ -85,7 +94,7 @@ export class GameScene extends Scene {
         
         // Update player (this will check for steps)
         this.player.update();
-        
+
         // Update UI
         this.stepCounterUI.update();
 
@@ -138,6 +147,7 @@ export class GameScene extends Scene {
         this.player.destroy();
         this.inputHandler.destroy();
         this.collectibleSpawner.destroy();
+        this.layoutGenerator.destroy();
         this.inventoryText.destroy();
     }
 } 

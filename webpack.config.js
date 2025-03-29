@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const rendererConfig = {
   mode: 'development',
@@ -31,6 +32,13 @@ const rendererConfig = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist')
   },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/index.html', to: 'index.html' }
+      ]
+    })
+  ],
   devServer: {
     static: [
       {

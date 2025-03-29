@@ -13,12 +13,16 @@ export class InputHandler {
   private keyBindings: Map<string, KeyBinding>;
   private commandHistory: Command[];
   private historySize: number;
+  private lastUpdate: number;
+  private activeCommands: Set<Command>;
 
   constructor(scene: Scene, historySize: number = 100) {
     this.scene = scene;
     this.keyBindings = new Map();
     this.commandHistory = [];
     this.historySize = historySize;
+    this.lastUpdate = 0;
+    this.activeCommands = new Set();
   }
 
   bindKey(keyCode: string, command: Command, isHeld: boolean = false): void {
@@ -40,30 +44,38 @@ export class InputHandler {
     key.on('down', () => {
       binding.isPressed = true;
       if (!binding.isHeld) {
-        this.executeCommand(command);
+        this.executeCommand(command, 0); // For non-held keys, delta doesn't matter
+      } else {
+        this.activeCommands.add(command);
       }
     });
 
     // Handle key up
     key.on('up', () => {
       binding.isPressed = false;
-      if (binding.isHeld && command.undo) {
-        command.undo();
+      if (binding.isHeld) {
+        this.activeCommands.delete(command);
+        // Call stop() on the command if it exists
+        if ('stop' in command) {
+          (command as any).stop();
+        }
       }
     });
   }
 
   update(): void {
-    // Execute commands for held keys
-    this.keyBindings.forEach(binding => {
-      if (binding.isHeld && binding.isPressed) {
-        this.executeCommand(binding.command);
-      }
+    const currentTime = this.scene.time.now;
+    const delta = currentTime - this.lastUpdate;
+    this.lastUpdate = currentTime;
+
+    // Execute only active commands
+    this.activeCommands.forEach(command => {
+      this.executeCommand(command, delta);
     });
   }
 
-  private executeCommand(command: Command): void {
-    command.execute();
+  private executeCommand(command: Command, delta: number): void {
+    command.execute(delta);
     
     // Add to history if the command supports undo
     if (command.undo) {
@@ -93,5 +105,6 @@ export class InputHandler {
     });
     this.keyBindings.clear();
     this.commandHistory = [];
+    this.activeCommands.clear();
   }
 } 

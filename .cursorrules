@@ -1,0 +1,40 @@
+{
+  "rules": [
+    {
+      "name": "Use the Component Pattern",
+      "description": "Entities should not be monolithic. Instead, use a composition-based system where behaviors are modular and attachable.",
+      "pattern": "(Phaser.GameObjects.Sprite|Phaser.GameObjects.Image)\\s*extends",
+      "replacement": "Use a component-based system instead of inheritance."
+    },
+    {
+      "name": "Apply the Event Queue Pattern",
+      "description": "Game actions should be decoupled using an event queue to avoid direct dependencies between systems.",
+      "pattern": "this\\.someAction\\(\\)",
+      "replacement": "Use an event-driven system like this.events.emit('action_name', data)."
+    },
+    {
+      "name": "Object Pooling for Performance",
+      "description": "Avoid frequent object creation and destruction by reusing objects where possible.",
+      "pattern": "new Phaser.GameObjects\\.",
+      "replacement": "Consider using an object pool to recycle game objects instead of creating new ones."
+    },
+    {
+      "name": "Finite State Machines for AI & Player States",
+      "description": "Use FSMs to manage different states of NPCs, enemies, and players instead of multiple boolean flags.",
+      "pattern": "if \\(this\\.isMoving && this\\.isAttacking\\)",
+      "replacement": "Use a state machine instead of checking multiple boolean flags."
+    },
+    {
+      "name": "Use the Prototype Pattern for Prefabs",
+      "description": "Game objects like enemies and power-ups should be instantiated from prefabs instead of repeated code.",
+      "pattern": "this\\.add\\.sprite\\(.*\\);",
+      "replacement": "Consider using prefabs or a factory pattern to instantiate game objects."
+    },
+    {
+      "name": "Avoid Large Update Loops",
+      "description": "Game logic should be modularized and avoid unnecessary calculations every frame.",
+      "pattern": "update\\(\\)\\s*{([^}]*)}",
+      "replacement": "Ensure only necessary logic is executed per frame; use delta time for updates."
+    }
+  ]
+}

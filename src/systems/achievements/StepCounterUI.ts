@@ -1,42 +1,50 @@
 import { Scene } from 'phaser';
 import { AchievementManager } from './AchievementManager';
+import { Inventory } from '../../entities/Inventory';
 
 export class StepCounterUI {
     private scene: Scene;
     private achievementManager: AchievementManager;
+    private inventory: Inventory;
     private text!: Phaser.GameObjects.Text;
-    private stepAchievement: any;
 
-    constructor(scene: Scene, achievementManager: AchievementManager) {
+    constructor(scene: Scene, achievementManager: AchievementManager, inventory: Inventory) {
         this.scene = scene;
         this.achievementManager = achievementManager;
+        this.inventory = inventory;
         this.createUI();
     }
 
     private createUI(): void {
         // Create text in the top-right corner
-        this.text = this.scene.add.text(16, 16, 'Steps: 0/25', {
+        this.text = this.scene.add.text(16, 16, 'Steps: 0\nItems: 0', {
             fontSize: '24px',
             color: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 10, y: 5 }
         });
 
-        // Get the step counter achievement
-        this.stepAchievement = this.achievementManager.getAchievements()
-            .find(a => a.id === 'step_counter');
+        // Set up inventory callback
+        this.inventory.setOnItemCollectedCallback((count) => {
+            this.update();
+        });
     }
 
     public update(): void {
-        if (this.stepAchievement) {
-            const current = this.stepAchievement.progress.current;
-            const target = this.stepAchievement.progress.target;
-            this.text.setText(`Steps: ${current}/${target}`);
-            
-            // Change color when achievement is unlocked
-            if (this.stepAchievement.isUnlocked) {
-                this.text.setColor('#00ff00');
-            }
+        const stepCount = this.achievementManager.getStepCount();
+        const itemCount = this.inventory.getItemCount();
+        const achievements = this.achievementManager.getAchievements();
+        
+        // Find the next locked step achievement
+        const nextAchievement = achievements
+            .filter(a => a.id.startsWith('step_counter') || a.id === 'wanderer' || a.id === 'explorer' || a.id === 'marathon_runner')
+            .find(a => !a.isUnlocked);
+
+        if (nextAchievement) {
+            this.text.setText(`Steps: ${stepCount}\nItems: ${itemCount}\nNext: ${nextAchievement.title} (${nextAchievement.progress!.target})`);
+        } else {
+            this.text.setText(`Steps: ${stepCount}\nItems: ${itemCount}\nAll step achievements unlocked!`);
+            this.text.setColor('#00ff00');
         }
     }
 

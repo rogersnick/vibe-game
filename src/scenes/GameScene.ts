@@ -13,7 +13,6 @@ export class GameScene extends Scene {
     private inputHandler!: InputHandler;
     private collectibleSpawner!: CollectibleSpawner;
     private spawnTimer: number = 0;
-    private inventoryText!: Phaser.GameObjects.Text;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -32,7 +31,7 @@ export class GameScene extends Scene {
         this.player.addAchievementObserver(this.achievementManager);
         
         // Create UI
-        this.stepCounterUI = new StepCounterUI(this, this.achievementManager);
+        this.stepCounterUI = new StepCounterUI(this, this.achievementManager, this.player.getInventory());
         
         // Set up input handler
         this.inputHandler = new InputHandler(this);
@@ -66,17 +65,6 @@ export class GameScene extends Scene {
         for (let i = 0; i < 5; i++) {
             this.collectibleSpawner.spawnRandomCollectible();
         }
-
-        // Create inventory counter
-        this.inventoryText = this.add.text(16, 56, 'Items: 0', {
-            fontSize: '24px',
-            color: '#ffffff'
-        });
-
-        // Set up inventory callback
-        this.player.getInventory().setOnItemCollectedCallback((count) => {
-            this.inventoryText.setText(`Items: ${count}`);
-        });
     }
 
     update(): void {
@@ -138,6 +126,5 @@ export class GameScene extends Scene {
         this.player.destroy();
         this.inputHandler.destroy();
         this.collectibleSpawner.destroy();
-        this.inventoryText.destroy();
     }
 } 

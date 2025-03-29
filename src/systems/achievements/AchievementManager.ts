@@ -23,7 +23,7 @@ export class AchievementManager implements AchievementObserver {
             }
         });
 
-        // Add step counter achievement
+        // Add step counter achievements
         this.achievements.set('step_counter', {
             id: 'step_counter',
             title: 'Step Counter',
@@ -32,6 +32,28 @@ export class AchievementManager implements AchievementObserver {
             progress: {
                 current: 0,
                 target: 25
+            }
+        });
+
+        this.achievements.set('explorer', {
+            id: 'explorer',
+            title: 'Explorer',
+            description: 'Move 1000 steps',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 1000
+            }
+        });
+
+        this.achievements.set('marathon_runner', {
+            id: 'marathon_runner',
+            title: 'Marathon Runner',
+            description: 'Move 10000 steps',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 10000
             }
         });
     }
@@ -63,14 +85,25 @@ export class AchievementManager implements AchievementObserver {
 
     private handlePlayerStep(): void {
         this.stepCount++;
-        const stepAchievement = this.achievements.get('step_counter');
-        if (stepAchievement && !stepAchievement.isUnlocked) {
-            stepAchievement.progress!.current = this.stepCount;
-            if (this.stepCount >= stepAchievement.progress!.target) {
-                stepAchievement.isUnlocked = true;
-                this.onAchievementUnlocked(stepAchievement);
+        
+        // Update progress for all step-based achievements
+        const stepAchievements = [
+            'step_counter',
+            'wanderer',
+            'explorer',
+            'marathon_runner'
+        ];
+
+        stepAchievements.forEach(achievementId => {
+            const achievement = this.achievements.get(achievementId);
+            if (achievement && !achievement.isUnlocked) {
+                achievement.progress!.current = this.stepCount;
+                if (this.stepCount >= achievement.progress!.target) {
+                    achievement.isUnlocked = true;
+                    this.onAchievementUnlocked(achievement);
+                }
             }
-        }
+        });
     }
 
     public onAchievementUnlocked(achievement: Achievement): void {

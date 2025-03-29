@@ -6,12 +6,19 @@ export class MenuScene extends Scene {
   }
 
   create(): void {
-    // Add title
-    const title = this.add.text(this.cameras.main.centerX, 200, 'Vibe Game', {
+    // Add main title
+    const mainTitle = this.add.text(this.cameras.main.centerX, 150, 'Vibing Mad', {
       font: '64px monospace',
       color: '#ffffff'
     });
-    title.setOrigin(0.5);
+    mainTitle.setOrigin(0.5);
+
+    // Add subtitle
+    const subtitle = this.add.text(this.cameras.main.centerX, 220, 'a Kefkaian experience', {
+      font: '48px monospace',
+      color: '#ffffff'
+    });
+    subtitle.setOrigin(0.5);
 
     // Add menu options
     const menuItems = ['Start Game', 'Options', 'Credits'];

@@ -14,7 +14,7 @@
   },
   "build": {
     "appId": "com.vibegame.app",
-    "productName": "Vibe Game",
+    "productName": "Vibing Mad : a Kefkaian experience",
     "directories": {
       "output": "release"
     },

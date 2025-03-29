@@ -38,6 +38,22 @@ export class LayoutGenerator {
     private currentLayout: LayoutElement[] = [];
     private roomConfig: RoomConfig | null = null;
     private readonly TEXT_VISIBILITY_DISTANCE = 150; // Distance in pixels at which text becomes visible
+    private mainRoom: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        element: Phaser.GameObjects.Rectangle;
+        border: Phaser.GameObjects.Rectangle;
+    } | null = null;
+    private obstacles: Array<{
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        element: Phaser.GameObjects.Rectangle;
+        border: Phaser.GameObjects.Rectangle;
+    }> = [];
 
     // Material base HP multipliers
     private readonly MATERIAL_HP_MULTIPLIERS: Record<Material, number> = {
@@ -348,7 +364,7 @@ export class LayoutGenerator {
             this.roomConfig.height,
             0x001835
         )
-        .setStrokeStyle(2, 0x004657)
+        .setStrokeStyle(4, 0xCCCCCC)  // 4px light gray border
         .setAlpha(0.8)
         .setDepth(-1);
 
@@ -390,7 +406,7 @@ export class LayoutGenerator {
                     element.height,
                     element.color
                 )
-                .setStrokeStyle(1, element.color)
+                .setStrokeStyle(4, 0xCCCCCC)  // 4px light gray border
                 .setAlpha(0.6)
                 .setDepth(-1);
 
@@ -661,5 +677,135 @@ export class LayoutGenerator {
                 element.text.setScale(scale);
             }
         });
+    }
+
+    private createRoom(): void {
+        // Create main room
+        const roomWidth = 800;
+        const roomHeight = 600;
+        const roomX = this.scene.cameras.main.centerX;
+        const roomY = this.scene.cameras.main.centerY;
+
+        // Create room background
+        const room = this.scene.add.rectangle(
+            roomX,
+            roomY,
+            roomWidth,
+            roomHeight,
+            0xE6F3FF,  // Pastel blue
+            0.7        // Slightly transparent
+        );
+
+        // Add room border
+        const roomBorder = this.scene.add.rectangle(
+            roomX,
+            roomY,
+            roomWidth,
+            roomHeight,
+            0xB3D9FF,  // Slightly darker pastel blue
+            0.7        // Slightly transparent
+        );
+        roomBorder.setStrokeStyle(4, 0xCCCCCC);  // 4px light gray border
+
+        // Store room reference
+        this.mainRoom = {
+            x: roomX,
+            y: roomY,
+            width: roomWidth,
+            height: roomHeight,
+            element: room,
+            border: roomBorder
+        };
+    }
+
+    private createObstacle(x: number, y: number, width: number, height: number, color: number): void {
+        // Create obstacle
+        const obstacle = this.scene.add.rectangle(
+            x,
+            y,
+            width,
+            height,
+            color,
+            0.5  // Semi-transparent
+        );
+
+        // Add obstacle border
+        const obstacleBorder = this.scene.add.rectangle(
+            x,
+            y,
+            width,
+            height,
+            color,
+            0.5  // Semi-transparent
+        );
+        obstacleBorder.setStrokeStyle(4, 0xCCCCCC);  // 4px light gray border
+
+        // Add to obstacles array
+        this.obstacles.push({
+            x,
+            y,
+            width,
+            height,
+            element: obstacle,
+            border: obstacleBorder
+        });
+    }
+
+    getTouchedElement(x: number, y: number, interactionSize: number = 32): LayoutElement | null {
+        // Skip the first element (main room)
+        for (let i = 1; i < this.currentLayout.length; i++) {
+            const layoutElement = this.currentLayout[i];
+            const obstacle = layoutElement.rectangle;
+            const element = layoutElement.element;
+
+            // Calculate the actual collision box for the element
+            const elementHalfWidth = element.width / 2;
+            const elementHalfHeight = element.height / 2;
+            const elementX = obstacle.x;
+            const elementY = obstacle.y;
+
+            // Check if the point is within the element's bounds, including the interaction size
+            if (x > elementX - elementHalfWidth - interactionSize/2 &&
+                x < elementX + elementHalfWidth + interactionSize/2 &&
+                y > elementY - elementHalfHeight - interactionSize/2 &&
+                y < elementY + elementHalfHeight + interactionSize/2) {
+                return layoutElement;
+            }
+        }
+        return null;
+    }
+
+    updateElementVisual(layoutElement: LayoutElement): void {
+        const element = layoutElement.element;
+        const rectangle = layoutElement.rectangle;
+
+        // Update the rectangle's alpha based on HP
+        const maxHp = this.calculateHP(element);
+        const hpPercentage = element.hp / maxHp;
+        rectangle.setAlpha(0.6 * hpPercentage);
+
+        // Update text color based on HP
+        if (layoutElement.text) {
+            const hpText = (layoutElement.text as Phaser.GameObjects.Container)
+                .list.find(child => child instanceof Phaser.GameObjects.Text && child.text.startsWith('HP:')) as Phaser.GameObjects.Text;
+            
+            if (hpText) {
+                hpText.setText(`HP: ${element.hp}`);
+                hpText.setColor(
+                    element.hp > maxHp * 0.7 ? '#4CAF50' : 
+                    element.hp > maxHp * 0.3 ? '#FFC107' : '#F44336'
+                );
+            }
+        }
+
+        // If HP is 0 or less, destroy the element
+        if (element.hp <= 0) {
+            rectangle.destroy();
+            layoutElement.text?.destroy();
+            const index = this.currentLayout.indexOf(layoutElement);
+            if (index > -1) {
+                this.currentLayout.splice(index, 1);
+            }
+        }
     }
 } 

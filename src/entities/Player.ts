@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
 import { Inventory } from './Inventory';
 import { MovementConfig } from '../config/MovementConfig';
+import { CollectibleConfig } from '../config/CollectibleConfig';
 
 export enum Direction {
     LEFT = 'left',
@@ -25,6 +26,11 @@ export class Player {
     private sprite!: Phaser.GameObjects.Sprite;
     private lastDirection: Direction = Direction.DOWN;
     private size: number = 32;  // Player size for collision detection
+    private interactionSize: number = 48;  // Larger size for interaction with elements
+    private equippedItem: CollectibleConfig | null = null;
+    private equippedItemSprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Arc | null = null;
+    private equippedItemText: Phaser.GameObjects.Text | null = null;
+    private totalDamage: number = 0;
 
     constructor(scene: Scene, x: number, y: number) {
         this.scene = scene;
@@ -32,6 +38,8 @@ export class Player {
         this.y = y;
         this.inventory = new Inventory();
         this.setupSprite();
+        this.setupEquippedItemText();
+        this.setupInputHandling();
     }
 
     private setupSprite(): void {
@@ -109,6 +117,32 @@ export class Player {
 
         // Start with idle down animation
         this.sprite.play('idle_down');
+    }
+
+    private setupEquippedItemText(): void {
+        // Create text in top-right corner
+        this.equippedItemText = this.scene.add.text(
+            this.scene.cameras.main.width - 20,
+            20,
+            '',
+            {
+                fontSize: '16px',
+                color: '#ffffff',
+                backgroundColor: '#000000',
+                padding: { x: 8, y: 4 }
+            }
+        ).setOrigin(1, 0); // Right-aligned, top-anchored
+    }
+
+    private updateEquippedItemText(): void {
+        if (this.equippedItemText) {
+            if (this.equippedItem) {
+                this.equippedItemText.setText(`${this.equippedItem.name} (${this.equippedItem.uses} uses)`);
+                this.equippedItemText.setVisible(true);
+            } else {
+                this.equippedItemText.setVisible(false);
+            }
+        }
     }
 
     addAchievementObserver(observer: AchievementObserver): void {
@@ -242,7 +276,7 @@ export class Player {
         const layoutGenerator = (this.scene as any).layoutGenerator;
         if (!layoutGenerator) return false;
 
-        // Check collision with all obstacles
+        // Use normal size for movement collision
         return layoutGenerator.checkCollision(x, y, this.size);
     }
 
@@ -256,5 +290,190 @@ export class Player {
 
     destroy(): void {
         this.sprite.destroy();
+        if (this.equippedItemText) {
+            this.equippedItemText.destroy();
+        }
+    }
+
+    equipItem(item: CollectibleConfig): void {
+        // Unequip current item if any
+        this.unequipItem();
+        
+        // Set new equipped item
+        this.equippedItem = item;
+        
+        // Update visual representation
+        this.updateEquippedItemVisual();
+        this.updateEquippedItemText();
+    }
+
+    private updateEquippedItemVisual(): void {
+        // Clean up previous equipped item sprite if it exists
+        if (this.equippedItemSprite) {
+            this.equippedItemSprite.destroy();
+            this.equippedItemSprite = null;
+        }
+
+        if (this.equippedItem) {
+            // Create a circle shape for the equipped item
+            const itemSprite = this.scene.add.circle(
+                this.x,
+                this.y,
+                8, // radius
+                this.equippedItem.color
+            );
+            
+            // Position the item sprite relative to the player
+            const offsetX = this.dx < 0 ? -20 : 20;
+            itemSprite.setPosition(this.x + offsetX, this.y);
+            
+            // Store the item sprite reference
+            this.equippedItemSprite = itemSprite;
+        }
+    }
+
+    unequipItem(): void {
+        if (this.equippedItemSprite) {
+            this.equippedItemSprite.destroy();
+            this.equippedItemSprite = null;
+        }
+        this.equippedItem = null;
+        this.updateEquippedItemText();
+    }
+
+    private setupInputHandling(): void {
+        // Add X key handler
+        if (this.scene.input.keyboard) {
+            const xKey = this.scene.input.keyboard.addKey('X');
+            xKey.on('down', () => {
+                if (this.equippedItem) {
+                    this.useEquippedItem();
+                }
+            });
+        }
+    }
+
+    private isTouchingElement(): boolean {
+        const layoutGenerator = (this.scene as any).layoutGenerator;
+        if (!layoutGenerator) return false;
+
+        // Use larger interaction size when checking for element interaction
+        return layoutGenerator.checkCollision(this.x, this.y, this.interactionSize);
+    }
+
+    useEquippedItem(): void {
+        if (!this.equippedItem || !this.isTouchingElement()) return;
+
+        const layoutGenerator = (this.scene as any).layoutGenerator;
+        if (!layoutGenerator) return;
+
+        // Get the element being touched using the larger interaction size
+        const touchedElement = layoutGenerator.getTouchedElement(this.x, this.y, this.interactionSize);
+        if (!touchedElement) return;
+
+        // Create hit animation
+        this.createHitAnimation(touchedElement.rectangle.x, touchedElement.rectangle.y);
+
+        // Apply damage based on item power
+        const damage = this.equippedItem.power;
+        touchedElement.element.hp -= damage;
+        
+        // Add to total damage score
+        this.totalDamage += damage;
+
+        // Show damage popup
+        this.createDamagePopup(touchedElement.rectangle.x, touchedElement.rectangle.y, damage);
+
+        // Update element's visual representation
+        layoutGenerator.updateElementVisual(touchedElement);
+
+        // Decrease item uses
+        this.equippedItem.uses--;
+        this.updateEquippedItemText();
+
+        // Unequip if no uses left
+        if (this.equippedItem.uses <= 0) {
+            this.unequipItem();
+        }
+    }
+
+    getTotalDamage(): number {
+        return this.totalDamage;
+    }
+
+    private createHitAnimation(x: number, y: number): void {
+        // Create a circle that expands and fades out
+        const hitCircle = this.scene.add.circle(x, y, 10, 0xFFFFFF);
+        hitCircle.setAlpha(0.8);
+
+        // Create particles
+        const particles = this.scene.add.particles(0, 0, 'particle', {
+            x: x,
+            y: y,
+            speed: { min: 100, max: 200 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.4, end: 0 },
+            alpha: { start: 0.8, end: 0 },
+            lifespan: 300,
+            quantity: 8,
+            blendMode: 'ADD'
+        });
+
+        // Animate the hit circle
+        this.scene.tweens.add({
+            targets: hitCircle,
+            radius: 30,
+            alpha: 0,
+            duration: 300,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                hitCircle.destroy();
+                particles.destroy();
+            }
+        });
+
+        // Add a flash effect
+        const flash = this.scene.add.rectangle(
+            this.scene.cameras.main.centerX,
+            this.scene.cameras.main.centerY,
+            this.scene.cameras.main.width,
+            this.scene.cameras.main.height,
+            0xFFFFFF
+        );
+        flash.setAlpha(0);
+        flash.setDepth(1000);
+
+        this.scene.tweens.add({
+            targets: flash,
+            alpha: 0.3,
+            duration: 50,
+            yoyo: true,
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
+    }
+
+    private createDamagePopup(x: number, y: number, damage: number): void {
+        // Create damage text
+        const damageText = this.scene.add.text(x, y - 20, `-${damage}`, {
+            fontSize: '24px',
+            color: '#ff0000',
+            fontFamily: 'Arial',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // Animate the text
+        this.scene.tweens.add({
+            targets: damageText,
+            y: y - 50,
+            alpha: 0,
+            duration: 500,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                damageText.destroy();
+            }
+        });
     }
 } 

@@ -7,90 +7,107 @@ export class CollectibleSpawner {
     private player: Player;
     private collectibles: Collectible[] = [];
     private readonly COLLECTIBLE_CONFIGS: CollectibleConfig[] = [
-        // Healing items
+        // Office Furniture (Heavy items)
         {
-            name: 'Health Potion',
+            name: 'Office Chair',
             category: 'healing',
-            color: 0xff0000,
-            power: 50,
-            uses: 1,
-            description: 'Restores 50 HP'
-        },
-        {
-            name: 'Bandage',
-            category: 'healing',
-            color: 0xff6b6b,
-            power: 25,
-            uses: 2,
-            description: 'Restores 25 HP per use'
-        },
-        // Power items
-        {
-            name: 'Power Crystal',
-            category: 'power',
-            color: 0x00ff00,
-            power: 75,
-            uses: 1,
-            description: 'Increases damage by 75%'
-        },
-        {
-            name: 'Energy Orb',
-            category: 'power',
-            color: 0x32cd32,
-            power: 50,
+            color: 0x8B4513,
+            power: 40,
             uses: 3,
-            description: 'Increases damage by 50% per use'
-        },
-        // Speed items
-        {
-            name: 'Speed Boost',
-            category: 'speed',
-            color: 0x0000ff,
-            power: 100,
-            uses: 1,
-            description: 'Doubles movement speed'
+            description: 'A sturdy chair that can be used as a shield'
         },
         {
-            name: 'Swift Potion',
-            category: 'speed',
-            color: 0x4169e1,
-            power: 50,
-            uses: 2,
-            description: 'Increases speed by 50% per use'
-        },
-        // Shield items
-        {
-            name: 'Shield Generator',
+            name: 'Filing Cabinet',
             category: 'shield',
-            color: 0xffff00,
-            power: 100,
+            color: 0x696969,
+            power: 80,
             uses: 1,
-            description: 'Creates a shield that blocks 100% damage'
+            description: 'Heavy metal cabinet that provides excellent cover'
+        },
+        // Office Supplies (Light items)
+        {
+            name: 'Stapler',
+            category: 'power',
+            color: 0xC0C0C0,
+            power: 30,
+            uses: 5,
+            description: 'A reliable weapon that never jams'
         },
         {
-            name: 'Defense Matrix',
-            category: 'shield',
-            color: 0xffd700,
-            power: 50,
+            name: 'Scissors',
+            category: 'power',
+            color: 0x808080,
+            power: 25,
+            uses: 4,
+            description: 'Sharp and precise cutting tool'
+        },
+        // Office Tools (Utility items)
+        {
+            name: 'Desk Lamp',
+            category: 'speed',
+            color: 0xFFD700,
+            power: 60,
             uses: 2,
-            description: 'Reduces incoming damage by 50% per use'
-        },
-        // Special items
-        {
-            name: 'Time Freeze',
-            category: 'special',
-            color: 0xff00ff,
-            power: 100,
-            uses: 1,
-            description: 'Freezes time for 5 seconds'
+            description: 'Bright light that temporarily blinds enemies'
         },
         {
-            name: 'Teleporter',
+            name: 'Extension Cord',
+            category: 'speed',
+            color: 0x000000,
+            power: 45,
+            uses: 3,
+            description: 'Can be used to trip or bind enemies'
+        },
+        // Office Equipment (Heavy equipment)
+        {
+            name: 'Printer',
+            category: 'shield',
+            color: 0x2F4F4F,
+            power: 70,
+            uses: 2,
+            description: 'Heavy equipment that can block attacks'
+        },
+        {
+            name: 'Monitor',
             category: 'special',
-            color: 0x9400d3,
-            power: 100,
+            color: 0x000080,
+            power: 55,
             uses: 1,
-            description: 'Teleports to a random safe location'
+            description: 'Can be thrown as a projectile'
+        },
+        // Office Materials (Construction items)
+        {
+            name: 'Wooden Board',
+            category: 'power',
+            color: 0x8B4513,
+            power: 35,
+            uses: 2,
+            description: 'A sturdy wooden board for defense'
+        },
+        {
+            name: 'Metal Bar',
+            category: 'power',
+            color: 0x808080,
+            power: 45,
+            uses: 3,
+            description: 'A heavy metal bar for offense'
+        },
+        // Office Accessories (Utility items)
+        {
+            name: 'Coffee Mug',
+            category: 'healing',
+            color: 0x8B0000,
+            power: 20,
+            uses: 2,
+            description: 'Hot coffee that can be thrown at enemies'
+        },
+        {
+            name: 'Paper Stack',
+            category: 'special',
+            color: 0xFFFFFF,
+            power: 30,
+            uses: 3,
+            description: 'Throwing paper can distract enemies'
         }
     ];
 

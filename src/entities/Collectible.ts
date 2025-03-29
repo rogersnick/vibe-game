@@ -82,6 +82,9 @@ export class Collectible {
             uses: this.config.uses,
             description: this.config.description
         });
+
+        // Equip the item
+        player.equipItem(this.config);
         
         // Add collection effect
         this.scene.tweens.add({

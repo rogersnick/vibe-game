@@ -49,13 +49,6 @@ export class Player {
         
         this.sprite.setScale(2.0);
         
-        // Set up animation completion listeners
-        this.sprite.on('animationcomplete', (animation: Phaser.Animations.Animation) => {
-            if (animation.key.startsWith('death_')) {
-                this.isDead = true;
-            }
-        });
-        
         // Set up animations
         // Idle animations for each direction
         this.scene.anims.create({
@@ -147,6 +140,16 @@ export class Player {
 
         // Start with idle down animation
         this.sprite.play('idle_down');
+
+        // Set up animation completion listener after all animations are created
+        this.sprite.on('animationcomplete', (animation: Phaser.Animations.Animation) => {
+            console.log('Animation completed:', animation.key); // Debug log
+            if (animation.key.startsWith('death_')) {
+                console.log('Death animation completed, starting game over'); // Debug log
+                this.isDead = true;
+                this.scene.scene.start('GameOverScene', { inventory: this.inventory });
+            }
+        });
     }
 
     private setupEnergyBar(): void {
@@ -212,6 +215,8 @@ export class Player {
     }
 
     private updateAnimation(): void {
+        if (this.isDead) return; // Don't change animations if dead
+
         if (this.dx === 0 && this.dy === 0) {
             // When not moving, play idle animation in last direction
             switch (this.lastDirection) {
@@ -337,6 +342,12 @@ export class Player {
                 this.sprite.play('death_up', true);
                 break;
         }
+
+        // Start game over scene after death animation (about 1 second)
+        this.scene.time.delayedCall(1000, () => {
+            this.isDead = true;
+            this.scene.scene.start('GameOverScene', { inventory: this.inventory });
+        });
     }
 
     isPlayerDead(): boolean {

@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
 import { Inventory } from './Inventory';
+import { MovementConfig } from '../config/MovementConfig';
 
 export enum Direction {
     LEFT = 'left',
@@ -35,9 +36,9 @@ export class Player {
     private setupSprite(): void {
         // Create the sprite
         this.sprite = this.scene.add.sprite(this.x, this.y, 'character_idle');
-        
+
         this.sprite.setScale(2.0);
-        
+
         // Set up animations
         // Idle animations for each direction
         this.scene.anims.create({
@@ -187,16 +188,41 @@ export class Player {
         }
     }
 
-    update(): void {
-        // Update position
-        this.x += this.dx * this.speed;
-        this.y += this.dy * this.speed;
+    setPosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+    }
 
-        // Keep player in bounds
-        const width = this.scene.cameras.main.width;
-        const height = this.scene.cameras.main.height;
-        this.x = Phaser.Math.Clamp(this.x, 0, width);
-        this.y = Phaser.Math.Clamp(this.y, 0, height);
+    update(): void {
+        // Calculate movement speed
+        const isDiagonal = this.dx !== 0 && this.dy !== 0;
+        const speedMultiplier = isDiagonal ? MovementConfig.diagonalSpeedMultiplier : 1;
+        const speed = MovementConfig.baseSpeed * speedMultiplier;
+
+        // Calculate new position
+        const newX = this.x + this.dx * speed;
+        const newY = this.y + this.dy * speed;
+
+        // Check if the new position would collide with any obstacles
+        const wouldCollide = this.checkCollision(newX, newY);
+
+        // Only update position if there's no collision
+        if (!wouldCollide) {
+            this.x = newX;
+            this.y = newY;
+        }
+
+        // Keep player within room boundaries
+        const layoutGenerator = (this.scene as any).layoutGenerator;
+        if (layoutGenerator) {
+            const room = layoutGenerator.getRoom();
+            if (room) {
+                const halfWidth = room.width / 2;
+                const halfHeight = room.height / 2;
+                this.x = Phaser.Math.Clamp(this.x, room.x - halfWidth + this.size/2, room.x + halfWidth - this.size/2);
+                this.y = Phaser.Math.Clamp(this.y, room.y - halfHeight + this.size/2, room.y + halfHeight - this.size/2);
+            }
+        }
 
         // Update sprite position
         this.sprite.setPosition(this.x, this.y);
@@ -205,6 +231,15 @@ export class Player {
         if (this.dx !== 0 || this.dy !== 0) {
             this.achievementObserver?.onAchievementEvent(AchievementEvent.PLAYER_STEP);
         }
+    }
+
+    private checkCollision(x: number, y: number): boolean {
+        // Get all rectangles from the layout generator
+        const layoutGenerator = (this.scene as any).layoutGenerator;
+        if (!layoutGenerator) return false;
+
+        // Check collision with all obstacles
+        return layoutGenerator.checkCollision(x, y, this.size);
     }
 
     getPosition(): { x: number; y: number } {

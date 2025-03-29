@@ -53,8 +53,12 @@ export class InputHandler {
     // Handle key up
     key.on('up', () => {
       binding.isPressed = false;
-      if (binding.isHeld && command.undo) {
-        command.undo();
+      if (binding.isHeld) {
+        this.activeCommands.delete(command);
+        // Call stop() on the command if it exists
+        if ('stop' in command) {
+          (command as any).stop();
+        }
       }
     });
   }

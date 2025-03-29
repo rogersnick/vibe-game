@@ -62,6 +62,12 @@ export class GameScene extends Scene {
         this.inputHandler.bindKey('LEFT', new MoveCommand(this.player, -1, 0), true);  // Left
         this.inputHandler.bindKey('RIGHT', new MoveCommand(this.player, 1, 0), true);  // Right
 
+        // Set up movement commands (Arrow Keys)
+        this.inputHandler.bindKey('UP', new MoveCommand(this.player, 0, -1), true);    // Up
+        this.inputHandler.bindKey('DOWN', new MoveCommand(this.player, 0, 1), true);   // Down
+        this.inputHandler.bindKey('LEFT', new MoveCommand(this.player, -1, 0), true);  // Left
+        this.inputHandler.bindKey('RIGHT', new MoveCommand(this.player, 1, 0), true);  // Right
+
         // Set up achievement unlock callback
         this.achievementManager.setOnUnlockCallback((achievement) => {
             this.showAchievementUnlock(achievement);
@@ -72,7 +78,7 @@ export class GameScene extends Scene {
         
         // Initialize layout generator
         this.layoutGenerator = new LayoutGenerator(this, this.player, this.collectibleSpawner);
-        
+
         // Generate initial layout
         this.layoutGenerator.generateNewLayout();
 

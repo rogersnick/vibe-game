@@ -21,6 +21,7 @@ interface OfficeElement {
     material: Material;
     fragility: Fragility;
     hp: number;
+    value: number;
 }
 
 interface LayoutElement {
@@ -57,6 +58,34 @@ export class LayoutGenerator {
         'reinforced': 2.0
     };
 
+    // Material value multipliers
+    private readonly MATERIAL_VALUE_MULTIPLIERS: Record<Material, number> = {
+        'wood': 1.0,
+        'metal': 2.5,
+        'plastic': 0.5,
+        'glass': 1.5,
+        'stone': 3.0,
+        'fabric': 0.8,
+        'paper': 0.2,
+        'electronic': 2.0
+    };
+
+    // Fragility value multipliers
+    private readonly FRAGILITY_VALUE_MULTIPLIERS: Record<Fragility, number> = {
+        'fragile': 1.5,    // Fragile items are often more valuable
+        'normal': 1.0,
+        'sturdy': 1.2,
+        'reinforced': 1.8
+    };
+
+    // Category value multipliers
+    private readonly CATEGORY_VALUE_MULTIPLIERS: Record<OfficeElement['category'], number> = {
+        'room': 3.0,
+        'furniture': 1.5,
+        'equipment': 2.0,
+        'hazard': 0.5
+    };
+
     // Office elements with their properties
     private readonly OFFICE_ELEMENTS: OfficeElement[] = [
         // Rooms
@@ -69,7 +98,8 @@ export class LayoutGenerator {
             category: 'room',
             material: 'metal',
             fragility: 'sturdy',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Private Office', 
@@ -80,7 +110,8 @@ export class LayoutGenerator {
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Conference Room', 
@@ -91,7 +122,8 @@ export class LayoutGenerator {
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Break Room', 
@@ -102,7 +134,8 @@ export class LayoutGenerator {
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         
         // Furniture
@@ -115,7 +148,8 @@ export class LayoutGenerator {
             category: 'furniture',
             material: 'wood',
             fragility: 'normal',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Filing Cabinet', 
@@ -126,7 +160,8 @@ export class LayoutGenerator {
             category: 'furniture',
             material: 'metal',
             fragility: 'sturdy',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Bookshelf', 
@@ -137,7 +172,8 @@ export class LayoutGenerator {
             category: 'furniture',
             material: 'wood',
             fragility: 'normal',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Meeting Table', 
@@ -148,7 +184,8 @@ export class LayoutGenerator {
             category: 'furniture',
             material: 'wood',
             fragility: 'sturdy',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         
         // Equipment
@@ -161,7 +198,8 @@ export class LayoutGenerator {
             category: 'equipment',
             material: 'plastic',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Computer', 
@@ -172,7 +210,8 @@ export class LayoutGenerator {
             category: 'equipment',
             material: 'electronic',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Projector', 
@@ -183,7 +222,8 @@ export class LayoutGenerator {
             category: 'equipment',
             material: 'plastic',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Coffee Machine', 
@@ -194,7 +234,8 @@ export class LayoutGenerator {
             category: 'equipment',
             material: 'metal',
             fragility: 'normal',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         
         // Hazards
@@ -207,7 +248,8 @@ export class LayoutGenerator {
             category: 'hazard',
             material: 'fabric',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Loose Wires', 
@@ -218,7 +260,8 @@ export class LayoutGenerator {
             category: 'hazard',
             material: 'electronic',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Paper Stack', 
@@ -229,7 +272,8 @@ export class LayoutGenerator {
             category: 'hazard',
             material: 'paper',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         },
         { 
             name: 'Broken Printer', 
@@ -240,7 +284,8 @@ export class LayoutGenerator {
             category: 'hazard',
             material: 'plastic',
             fragility: 'fragile',
-            hp: 0 // Will be calculated
+            hp: 0,
+            value: 0
         }
     ];
 
@@ -264,6 +309,19 @@ export class LayoutGenerator {
         
         // Calculate final HP
         return Math.round(baseHP * materialMultiplier * fragilityMultiplier);
+    }
+
+    private calculateValue(element: OfficeElement): number {
+        // Base value is area of the element
+        const baseValue = element.width * element.height;
+        
+        // Apply multipliers
+        const materialMultiplier = this.MATERIAL_VALUE_MULTIPLIERS[element.material];
+        const fragilityMultiplier = this.FRAGILITY_VALUE_MULTIPLIERS[element.fragility];
+        const categoryMultiplier = this.CATEGORY_VALUE_MULTIPLIERS[element.category];
+        
+        // Calculate final value
+        return Math.round(baseValue * materialMultiplier * fragilityMultiplier * categoryMultiplier);
     }
 
     getRoom(): Phaser.GameObjects.Rectangle | null {
@@ -305,14 +363,16 @@ export class LayoutGenerator {
             category: 'room',
             material: 'stone',
             fragility: 'reinforced',
-            hp: 0
+            hp: 0,
+            value: 0
         };
         mainOfficeElement.hp = this.calculateHP(mainOfficeElement);
+        mainOfficeElement.value = this.calculateValue(mainOfficeElement);
 
         const roomText = this.scene.add.text(
             room.x,
             room.y - this.roomConfig.height/2 + 20,
-            `Main Office\nHP: ${mainOfficeElement.hp}\nMaterial: ${mainOfficeElement.material}\nFragility: ${mainOfficeElement.fragility}`,
+            `Main Office\nHP: ${mainOfficeElement.hp}\nValue: ${mainOfficeElement.value}\nMaterial: ${mainOfficeElement.material}\nFragility: ${mainOfficeElement.fragility}`,
             {
                 fontSize: '16px',
                 color: '#ffffff',
@@ -334,6 +394,7 @@ export class LayoutGenerator {
         for (let i = 0; i < elementCount; i++) {
             const element = { ...this.OFFICE_ELEMENTS[this.getRandomNumber(0, this.OFFICE_ELEMENTS.length - 1, 0)] };
             element.hp = this.calculateHP(element);
+            element.value = this.calculateValue(element);
             
             // Try to place the element
             const position = this.findSafePositionForElement(element, placedElements);
@@ -352,7 +413,7 @@ export class LayoutGenerator {
                 const text = this.scene.add.text(
                     position.x,
                     position.y - element.height/2 - 20,
-                    `${element.name}\nHP: ${element.hp}\nMaterial: ${element.material}\nFragility: ${element.fragility}`,
+                    `${element.name}\nHP: ${element.hp}\nValue: ${element.value}\nMaterial: ${element.material}\nFragility: ${element.fragility}`,
                     {
                         fontSize: '12px',
                         color: '#ffffff',

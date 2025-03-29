@@ -1,12 +1,12 @@
 import { Scene } from 'phaser';
 import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
 import { Inventory } from './Inventory';
+import { MovementConfig } from '../config/MovementConfig';
 
 export class Player {
     private scene: Scene;
     private x: number;
     private y: number;
-    private speed: number = 5;
     private dx: number = 0;
     private dy: number = 0;
     private achievementObserver: AchievementObserver | null = null;
@@ -24,14 +24,27 @@ export class Player {
     }
 
     move(dx: number, dy: number): void {
+        // If dx and dy are both 0, stop movement
+        if (dx === 0 && dy === 0) {
+            this.dx = 0;
+            this.dy = 0;
+            return;
+        }
+
+        // Update velocity
         this.dx = dx;
         this.dy = dy;
     }
 
     update(): void {
+        // Calculate movement speed
+        const isDiagonal = this.dx !== 0 && this.dy !== 0;
+        const speedMultiplier = isDiagonal ? MovementConfig.diagonalSpeedMultiplier : 1;
+        const speed = MovementConfig.baseSpeed * speedMultiplier;
+
         // Update position
-        this.x += this.dx * this.speed;
-        this.y += this.dy * this.speed;
+        this.x += this.dx * speed;
+        this.y += this.dy * speed;
 
         // Keep player in bounds
         const width = this.scene.cameras.main.width;

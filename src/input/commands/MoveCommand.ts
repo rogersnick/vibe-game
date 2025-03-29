@@ -5,21 +5,21 @@ export class MoveCommand implements Command {
   private player: Player;
   private dx: number;
   private dy: number;
-  private speed: number;
+  private key: string;
 
-  constructor(player: Player, dx: number, dy: number, speed: number = 5) {
+  constructor(player: Player, dx: number, dy: number, key: string) {
     this.player = player;
     this.dx = dx;
     this.dy = dy;
-    this.speed = speed;
+    this.key = key;
   }
 
   execute(): void {
-    this.player.move(this.dx * this.speed, this.dy * this.speed);
+    this.player.move(this.dx, this.dy, this.key);
   }
 
   // Optional: Implement undo if you want to support movement reversal
   undo(): void {
-    this.player.move(-this.dx * this.speed, -this.dy * this.speed);
+    this.player.stopMoving(this.key);
   }
 } 

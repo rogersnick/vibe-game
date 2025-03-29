@@ -47,6 +47,9 @@ export class InputHandler {
     // Handle key up
     key.on('up', () => {
       binding.isPressed = false;
+      if (binding.isHeld && command.undo) {
+        command.undo();
+      }
     });
   }
 

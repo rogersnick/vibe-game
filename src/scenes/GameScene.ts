@@ -39,10 +39,21 @@ export class GameScene extends Scene {
         this.inputHandler = new InputHandler(this);
 
         // Set up movement commands
-        this.inputHandler.bindKey('W', new MoveCommand(this.player, 0, -1), true);  // Up
-        this.inputHandler.bindKey('S', new MoveCommand(this.player, 0, 1), true);   // Down
-        this.inputHandler.bindKey('A', new MoveCommand(this.player, -1, 0), true);  // Left
-        this.inputHandler.bindKey('D', new MoveCommand(this.player, 1, 0), true);   // Right
+        this.inputHandler.bindKey('W', new MoveCommand(this.player, 0, -1, 'W'), true);  // Up
+        this.inputHandler.bindKey('S', new MoveCommand(this.player, 0, 1, 'S'), true);   // Down
+        this.inputHandler.bindKey('A', new MoveCommand(this.player, -1, 0, 'A'), true);  // Left
+        this.inputHandler.bindKey('D', new MoveCommand(this.player, 1, 0, 'D'), true);   // Right
+
+        // Set up running with Space key
+        if (this.input.keyboard) {
+            const spaceKey = this.input.keyboard.addKey('SPACE');
+            spaceKey.on('down', () => {
+                this.player.setRunning(true);
+            });
+            spaceKey.on('up', () => {
+                this.player.setRunning(false);
+            });
+        }
 
         // Set up achievement unlock callback
         this.achievementManager.setOnUnlockCallback((achievement) => {
@@ -61,7 +72,7 @@ export class GameScene extends Scene {
         }
 
         // Create inventory counter
-        this.inventoryText = this.add.text(16, 16, 'Items: 0', {
+        this.inventoryText = this.add.text(16, 56, 'Items: 0', {
             fontSize: '24px',
             color: '#ffffff'
         });

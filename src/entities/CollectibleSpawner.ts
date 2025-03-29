@@ -1,6 +1,6 @@
-import { Scene } from 'phaser';
-import { Collectible, CollectibleConfig } from './Collectible';
-import { Player } from './Player';
+import {Scene} from 'phaser';
+import {Collectible, CollectibleConfig} from './Collectible';
+import {Player} from './Player';
 
 export class CollectibleSpawner {
     private scene: Scene;

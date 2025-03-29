@@ -1,4 +1,4 @@
-import { AchievementEvent, AchievementObserver, AchievementSubject } from './types';
+import {AchievementEvent, AchievementObserver, AchievementSubject} from './types';
 
 export abstract class BaseAchievementSubject implements AchievementSubject {
     private observers: AchievementObserver[] = [];

@@ -1,6 +1,6 @@
-import { Scene } from 'phaser';
-import { Player } from '../../entities/Player';
-import { CollectibleSpawner } from '../../entities/CollectibleSpawner';
+import {Scene} from 'phaser';
+import {Player} from '../../entities/Player';
+import {CollectibleSpawner} from '../../entities/CollectibleSpawner';
 
 interface RoomConfig {
     width: number;
@@ -313,37 +313,8 @@ export class LayoutGenerator {
         scene.events.on('update', this.updateTextVisibility, this);
     }
 
-    private calculateHP(element: OfficeElement): number {
-        // Base HP is area of the element
-        const baseHP = element.width * element.height;
-        
-        // Apply material and fragility multipliers
-        const materialMultiplier = this.MATERIAL_HP_MULTIPLIERS[element.material as Material];
-        const fragilityMultiplier = this.FRAGILITY_MULTIPLIERS[element.fragility as Fragility];
-        
-        // Calculate final HP
-        return Math.round(baseHP * materialMultiplier * fragilityMultiplier);
-    }
-
-    private calculateValue(element: OfficeElement): number {
-        // Base value is area of the element
-        const baseValue = element.width * element.height;
-        
-        // Apply multipliers
-        const materialMultiplier = this.MATERIAL_VALUE_MULTIPLIERS[element.material as Material];
-        const fragilityMultiplier = this.FRAGILITY_VALUE_MULTIPLIERS[element.fragility as Fragility];
-        const categoryMultiplier = this.CATEGORY_VALUE_MULTIPLIERS[element.category];
-        
-        // Calculate final value
-        return Math.round(baseValue * materialMultiplier * fragilityMultiplier * categoryMultiplier);
-    }
-
     getRoom(): Phaser.GameObjects.Rectangle | null {
         return this.currentLayout[0]?.rectangle || null;
-    }
-
-    private getRandomNumber(min: number, max: number, defaultValue: number): number {
-        return (Phaser.Math.Between(min, max) ?? defaultValue) as number;
     }
 
     generateNewLayout(): void {
@@ -364,9 +335,9 @@ export class LayoutGenerator {
             this.roomConfig.height,
             0x001835
         )
-        .setStrokeStyle(4, 0xCCCCCC)  // 4px light gray border
-        .setAlpha(0.8)
-        .setDepth(-1);
+            .setStrokeStyle(4, 0xCCCCCC)  // 4px light gray border
+            .setAlpha(0.8)
+            .setDepth(-1);
 
         const mainOfficeElement: OfficeElement = {
             name: 'Main Office',
@@ -383,19 +354,19 @@ export class LayoutGenerator {
         mainOfficeElement.hp = this.calculateHP(mainOfficeElement);
         mainOfficeElement.value = this.calculateValue(mainOfficeElement);
 
-        this.createElementText(mainOfficeElement, room.x, room.y - this.roomConfig.height/2 + 20);
+        this.createElementText(mainOfficeElement, room.x, room.y - this.roomConfig.height / 2 + 20);
 
-        this.currentLayout.push({ rectangle: room, text: mainOfficeElement.text!, element: mainOfficeElement });
+        this.currentLayout.push({rectangle: room, text: mainOfficeElement.text!, element: mainOfficeElement});
 
         // Generate random office elements (up to 20)
         const elementCount = this.getRandomNumber(10, 20, 15);
         const placedElements: OfficeElement[] = [];
 
         for (let i = 0; i < elementCount; i++) {
-            const element = { ...this.OFFICE_ELEMENTS[this.getRandomNumber(0, this.OFFICE_ELEMENTS.length - 1, 0)] };
+            const element = {...this.OFFICE_ELEMENTS[this.getRandomNumber(0, this.OFFICE_ELEMENTS.length - 1, 0)]};
             element.hp = this.calculateHP(element);
             element.value = this.calculateValue(element);
-            
+
             // Try to place the element
             const position = this.findSafePositionForElement(element, placedElements);
             if (position) {
@@ -406,13 +377,13 @@ export class LayoutGenerator {
                     element.height,
                     element.color
                 )
-                .setStrokeStyle(4, 0xCCCCCC)  // 4px light gray border
-                .setAlpha(0.6)
-                .setDepth(-1);
+                    .setStrokeStyle(4, 0xCCCCCC)  // 4px light gray border
+                    .setAlpha(0.6)
+                    .setDepth(-1);
 
-                this.createElementText(element, position.x, position.y - element.height/2 - 20);
+                this.createElementText(element, position.x, position.y - element.height / 2 - 20);
 
-                this.currentLayout.push({ rectangle: obstacle, text: element.text!, element: element });
+                this.currentLayout.push({rectangle: obstacle, text: element.text!, element: element});
                 placedElements.push(element);
             }
         }
@@ -427,47 +398,6 @@ export class LayoutGenerator {
         this.player.setPosition(playerPos.x, playerPos.y);
     }
 
-    private findSafePositionForElement(element: OfficeElement, placedElements: OfficeElement[]): { x: number; y: number } | null {
-        if (!this.roomConfig || !this.currentLayout[0]) return null;
-
-        const room = this.currentLayout[0].rectangle;
-        const maxAttempts = 50;
-        let attempts = 0;
-
-        while (attempts < maxAttempts) {
-            const x = this.getRandomNumber(
-                room.x - this.roomConfig.width/2 + element.width/2,
-                room.x + this.roomConfig.width/2 - element.width/2,
-                room.x
-            );
-            const y = this.getRandomNumber(
-                room.y - this.roomConfig.height/2 + element.height/2,
-                room.y + this.roomConfig.height/2 - element.height/2,
-                room.y
-            );
-
-            // Check if position is safe
-            let isSafe = true;
-
-            // Check collision with existing elements
-            for (let i = 1; i < this.currentLayout.length; i++) {
-                const existing = this.currentLayout[i].rectangle;
-                if (this.isOverlapping(x, y, element.width, element.height, existing)) {
-                    isSafe = false;
-                    break;
-                }
-            }
-
-            if (isSafe) {
-                return { x, y };
-            }
-
-            attempts++;
-        }
-
-        return null;
-    }
-
     checkCollision(x: number, y: number, size: number): boolean {
         if (!this.roomConfig) return false;
 
@@ -479,9 +409,9 @@ export class LayoutGenerator {
         const halfHeight = this.roomConfig.height / 2;
         const halfSize = size / 2;
 
-        if (x - halfSize < room.x - halfWidth || 
+        if (x - halfSize < room.x - halfWidth ||
             x + halfSize > room.x + halfWidth ||
-            y - halfSize < room.y - halfHeight || 
+            y - halfSize < room.y - halfHeight ||
             y + halfSize > room.y + halfHeight) {
             return true;
         }
@@ -510,9 +440,145 @@ export class LayoutGenerator {
         return false;
     }
 
+    destroy(): void {
+        this.clearLayout();
+        delete (this.scene as any).layoutGenerator;
+    }
+
+    getTouchedElement(x: number, y: number, interactionSize: number = 32): LayoutElement | null {
+        // Skip the first element (main room)
+        for (let i = 1; i < this.currentLayout.length; i++) {
+            const layoutElement = this.currentLayout[i];
+            const obstacle = layoutElement.rectangle;
+            const element = layoutElement.element;
+
+            // Calculate the actual collision box for the element
+            const elementHalfWidth = element.width / 2;
+            const elementHalfHeight = element.height / 2;
+            const elementX = obstacle.x;
+            const elementY = obstacle.y;
+
+            // Check if the point is within the element's bounds, including the interaction size
+            if (x > elementX - elementHalfWidth - interactionSize / 2 &&
+                x < elementX + elementHalfWidth + interactionSize / 2 &&
+                y > elementY - elementHalfHeight - interactionSize / 2 &&
+                y < elementY + elementHalfHeight + interactionSize / 2) {
+                return layoutElement;
+            }
+        }
+        return null;
+    }
+
+    updateElementVisual(layoutElement: LayoutElement): void {
+        const element = layoutElement.element;
+        const rectangle = layoutElement.rectangle;
+
+        // Update the rectangle's alpha based on HP
+        const maxHp = this.calculateHP(element);
+        const hpPercentage = element.hp / maxHp;
+        rectangle.setAlpha(0.6 * hpPercentage);
+
+        // Update text color based on HP
+        if (layoutElement.text) {
+            const hpText = (layoutElement.text as Phaser.GameObjects.Container)
+                .list.find(child => child instanceof Phaser.GameObjects.Text && child.text.startsWith('HP:')) as Phaser.GameObjects.Text;
+
+            if (hpText) {
+                hpText.setText(`HP: ${element.hp}`);
+                hpText.setColor(
+                    element.hp > maxHp * 0.7 ? '#4CAF50' :
+                        element.hp > maxHp * 0.3 ? '#FFC107' : '#F44336'
+                );
+            }
+        }
+
+        // If HP is 0 or less, destroy the element
+        if (element.hp <= 0) {
+            rectangle.destroy();
+            layoutElement.text?.destroy();
+            const index = this.currentLayout.indexOf(layoutElement);
+            if (index > -1) {
+                this.currentLayout.splice(index, 1);
+            }
+        }
+    }
+
+    private calculateHP(element: OfficeElement): number {
+        // Base HP is area of the element
+        const baseHP = element.width * element.height;
+
+        // Apply material and fragility multipliers
+        const materialMultiplier = this.MATERIAL_HP_MULTIPLIERS[element.material as Material];
+        const fragilityMultiplier = this.FRAGILITY_MULTIPLIERS[element.fragility as Fragility];
+
+        // Calculate final HP
+        return Math.round(baseHP * materialMultiplier * fragilityMultiplier);
+    }
+
+    private calculateValue(element: OfficeElement): number {
+        // Base value is area of the element
+        const baseValue = element.width * element.height;
+
+        // Apply multipliers
+        const materialMultiplier = this.MATERIAL_VALUE_MULTIPLIERS[element.material as Material];
+        const fragilityMultiplier = this.FRAGILITY_VALUE_MULTIPLIERS[element.fragility as Fragility];
+        const categoryMultiplier = this.CATEGORY_VALUE_MULTIPLIERS[element.category];
+
+        // Calculate final value
+        return Math.round(baseValue * materialMultiplier * fragilityMultiplier * categoryMultiplier);
+    }
+
+    private getRandomNumber(min: number, max: number, defaultValue: number): number {
+        return (Phaser.Math.Between(min, max) ?? defaultValue) as number;
+    }
+
+    private findSafePositionForElement(element: OfficeElement, placedElements: OfficeElement[]): {
+        x: number;
+        y: number
+    } | null {
+        if (!this.roomConfig || !this.currentLayout[0]) return null;
+
+        const room = this.currentLayout[0].rectangle;
+        const maxAttempts = 50;
+        let attempts = 0;
+
+        while (attempts < maxAttempts) {
+            const x = this.getRandomNumber(
+                room.x - this.roomConfig.width / 2 + element.width / 2,
+                room.x + this.roomConfig.width / 2 - element.width / 2,
+                room.x
+            );
+            const y = this.getRandomNumber(
+                room.y - this.roomConfig.height / 2 + element.height / 2,
+                room.y + this.roomConfig.height / 2 - element.height / 2,
+                room.y
+            );
+
+            // Check if position is safe
+            let isSafe = true;
+
+            // Check collision with existing elements
+            for (let i = 1; i < this.currentLayout.length; i++) {
+                const existing = this.currentLayout[i].rectangle;
+                if (this.isOverlapping(x, y, element.width, element.height, existing)) {
+                    isSafe = false;
+                    break;
+                }
+            }
+
+            if (isSafe) {
+                return {x, y};
+            }
+
+            attempts++;
+        }
+
+        return null;
+    }
+
     private findSafePosition(): { x: number; y: number } {
         if (!this.roomConfig || !this.currentLayout[0]) {
-            return { x: 0, y: 0 };
+            return {x: 0, y: 0};
         }
 
         const room = this.currentLayout[0].rectangle;
@@ -520,9 +586,9 @@ export class LayoutGenerator {
         let isSafe = false;
 
         while (!isSafe) {
-            x = this.getRandomNumber(room.x - this.roomConfig.width/2 + 50, room.x + this.roomConfig.width/2 - 50, room.x);
-            y = this.getRandomNumber(room.y - this.roomConfig.height/2 + 50, room.y + this.roomConfig.height/2 - 50, room.y);
-            
+            x = this.getRandomNumber(room.x - this.roomConfig.width / 2 + 50, room.x + this.roomConfig.width / 2 - 50, room.x);
+            y = this.getRandomNumber(room.y - this.roomConfig.height / 2 + 50, room.y + this.roomConfig.height / 2 - 50, room.y);
+
             isSafe = true;
             for (let i = 1; i < this.currentLayout.length; i++) {
                 const obstacle = this.currentLayout[i].rectangle;
@@ -533,7 +599,7 @@ export class LayoutGenerator {
             }
         }
 
-        return { x: x ?? 0, y: y ?? 0 };
+        return {x: x ?? 0, y: y ?? 0};
     }
 
     private isOverlapping(x1: number, y1: number, w1: number, h1: number, rect: Phaser.GameObjects.Rectangle): boolean {
@@ -548,10 +614,10 @@ export class LayoutGenerator {
         const halfW2 = w2 / 2;
         const halfH2 = h2 / 2;
 
-        return !(x1 + halfW1 < x2 - halfW2 || 
-                x1 - halfW1 > x2 + halfW2 || 
-                y1 + halfH1 < y2 - halfH2 || 
-                y1 - halfH1 > y2 + halfH2);
+        return !(x1 + halfW1 < x2 - halfW2 ||
+            x1 - halfW1 > x2 + halfW2 ||
+            y1 + halfH1 < y2 - halfH2 ||
+            y1 - halfH1 > y2 + halfH2);
     }
 
     private clearLayout(): void {
@@ -563,19 +629,14 @@ export class LayoutGenerator {
         this.roomConfig = null;
     }
 
-    destroy(): void {
-        this.clearLayout();
-        delete (this.scene as any).layoutGenerator;
-    }
-
     private createElementText(element: OfficeElement, x: number, y: number): void {
         const textStyle = {
             fontSize: '14px',
             fontFamily: 'Arial',
             align: 'center',
-            wordWrap: { width: 150 },
+            wordWrap: {width: 150},
             backgroundColor: '#000000',
-            padding: { x: 8, y: 4 }
+            padding: {x: 8, y: 4}
         };
 
         // Create a container for the text elements
@@ -593,8 +654,8 @@ export class LayoutGenerator {
 
         const hpText = this.scene.add.text(0, 25, `HP: ${element.hp}`, {
             ...textStyle,
-            color: element.hp > element.maxHp * 0.7 ? '#4CAF50' : 
-                   element.hp > element.maxHp * 0.3 ? '#FFC107' : '#F44336'
+            color: element.hp > element.maxHp * 0.7 ? '#4CAF50' :
+                element.hp > element.maxHp * 0.3 ? '#FFC107' : '#F44336'
         }).setOrigin(0.5, 0);
 
         const valueText = this.scene.add.text(0, 45, `Value: ${element.value}`, {
@@ -609,9 +670,9 @@ export class LayoutGenerator {
 
         const fragilityText = this.scene.add.text(0, 85, element.fragility, {
             ...textStyle,
-            color: element.fragility === 'fragile' ? '#F44336' : 
-                   element.fragility === 'normal' ? '#4CAF50' : 
-                   element.fragility === 'sturdy' ? '#2196F3' : '#9C27B0'
+            color: element.fragility === 'fragile' ? '#F44336' :
+                element.fragility === 'normal' ? '#4CAF50' :
+                    element.fragility === 'sturdy' ? '#2196F3' : '#9C27B0'
         }).setOrigin(0.5, 0);
 
         // Add all text elements to the container
@@ -635,7 +696,7 @@ export class LayoutGenerator {
         // Add a border with the element's color
         const border = this.scene.add.rectangle(0, 0, width, height, element.color, 0.3);
         border.setOrigin(0.5, 0);
-        
+
         // Use thicker border for room elements
         const borderWidth = element.category === 'room' ? 4 : 2;
         const borderAlpha = element.category === 'room' ? 0.8 : 0.5;
@@ -749,63 +810,5 @@ export class LayoutGenerator {
             element: obstacle,
             border: obstacleBorder
         });
-    }
-
-    getTouchedElement(x: number, y: number, interactionSize: number = 32): LayoutElement | null {
-        // Skip the first element (main room)
-        for (let i = 1; i < this.currentLayout.length; i++) {
-            const layoutElement = this.currentLayout[i];
-            const obstacle = layoutElement.rectangle;
-            const element = layoutElement.element;
-
-            // Calculate the actual collision box for the element
-            const elementHalfWidth = element.width / 2;
-            const elementHalfHeight = element.height / 2;
-            const elementX = obstacle.x;
-            const elementY = obstacle.y;
-
-            // Check if the point is within the element's bounds, including the interaction size
-            if (x > elementX - elementHalfWidth - interactionSize/2 &&
-                x < elementX + elementHalfWidth + interactionSize/2 &&
-                y > elementY - elementHalfHeight - interactionSize/2 &&
-                y < elementY + elementHalfHeight + interactionSize/2) {
-                return layoutElement;
-            }
-        }
-        return null;
-    }
-
-    updateElementVisual(layoutElement: LayoutElement): void {
-        const element = layoutElement.element;
-        const rectangle = layoutElement.rectangle;
-
-        // Update the rectangle's alpha based on HP
-        const maxHp = this.calculateHP(element);
-        const hpPercentage = element.hp / maxHp;
-        rectangle.setAlpha(0.6 * hpPercentage);
-
-        // Update text color based on HP
-        if (layoutElement.text) {
-            const hpText = (layoutElement.text as Phaser.GameObjects.Container)
-                .list.find(child => child instanceof Phaser.GameObjects.Text && child.text.startsWith('HP:')) as Phaser.GameObjects.Text;
-            
-            if (hpText) {
-                hpText.setText(`HP: ${element.hp}`);
-                hpText.setColor(
-                    element.hp > maxHp * 0.7 ? '#4CAF50' : 
-                    element.hp > maxHp * 0.3 ? '#FFC107' : '#F44336'
-                );
-            }
-        }
-
-        // If HP is 0 or less, destroy the element
-        if (element.hp <= 0) {
-            rectangle.destroy();
-            layoutElement.text?.destroy();
-            const index = this.currentLayout.indexOf(layoutElement);
-            if (index > -1) {
-                this.currentLayout.splice(index, 1);
-            }
-        }
     }
 } 

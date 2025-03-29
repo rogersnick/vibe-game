@@ -1,11 +1,11 @@
-import { Scene } from 'phaser';
-import { Player } from '../entities/Player';
-import { AchievementManager } from '../systems/achievements/AchievementManager';
-import { StepCounterUI } from '../systems/achievements/StepCounterUI';
-import { InputHandler } from '../input/InputHandler';
-import { MoveCommand } from '../input/commands/MoveCommand';
-import { CollectibleSpawner } from '../entities/CollectibleSpawner';
-import { LayoutGenerator } from '../systems/layout/LayoutGenerator';
+import {Scene} from 'phaser';
+import {Player} from '../entities/Player';
+import {AchievementManager} from '../systems/achievements/AchievementManager';
+import {StepCounterUI} from '../systems/achievements/StepCounterUI';
+import {InputHandler} from '../input/InputHandler';
+import {MoveCommand} from '../input/commands/MoveCommand';
+import {CollectibleSpawner} from '../entities/CollectibleSpawner';
+import {LayoutGenerator} from '../systems/layout/LayoutGenerator';
 
 export class GameScene extends Scene {
     private player!: Player;
@@ -23,24 +23,24 @@ export class GameScene extends Scene {
     private scoreText: Phaser.GameObjects.Text | null = null;
 
     constructor() {
-        super({ key: 'GameScene' });
+        super({key: 'GameScene'});
     }
 
     create(): void {
         // Create achievement manager
         this.achievementManager = new AchievementManager();
-        
+
         // Create player at center of screen
         const centerX = this.cameras.main.centerX;
         const centerY = this.cameras.main.centerY;
         this.player = new Player(this, centerX, centerY);
-        
+
         // Connect player to achievement system
         this.player.addAchievementObserver(this.achievementManager);
-        
+
         // Create UI
         this.stepCounterUI = new StepCounterUI(this, this.achievementManager);
-        
+
         // Set up input handler
         this.inputHandler = new InputHandler(this);
 
@@ -75,7 +75,7 @@ export class GameScene extends Scene {
 
         // Initialize collectible spawner
         this.collectibleSpawner = new CollectibleSpawner(this, this.player);
-        
+
         // Initialize layout generator
         this.layoutGenerator = new LayoutGenerator(this, this.player, this.collectibleSpawner);
 
@@ -103,108 +103,12 @@ export class GameScene extends Scene {
         this.setupTimer();
     }
 
-    private setupTimer(): void {
-        // Create timer text
-        this.timerText = this.add.text(20, this.cameras.main.height - 60, `Time: ${this.timeLeft}s`, {
-            fontSize: '24px',
-            color: '#ffffff',
-            backgroundColor: '#000000',
-            padding: { x: 10, y: 5 }
-        });
-        this.timerText.setScrollFactor(0); // Keep timer fixed on screen
-
-        // Create timer event
-        this.timerEvent = this.time.addEvent({
-            delay: 1000,
-            callback: this.updateTimer,
-            callbackScope: this,
-            loop: true
-        });
-    }
-
-    private updateTimer(): void {
-        this.timeLeft--;
-        if (this.timerText) {
-            this.timerText.setText(`Time: ${this.timeLeft}s`);
-        }
-
-        if (this.timeLeft <= 0) {
-            this.gameOver();
-        }
-    }
-
-    private gameOver(): void {
-        this.isGameOver = true;
-        
-        // Stop the timer
-        if (this.timerEvent) {
-            this.timerEvent.destroy();
-            this.timerEvent = null;
-        }
-
-        // Create game over text
-        const gameOverText = this.add.text(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY - 50,
-            'Game Over, your boss caught you!',
-            {
-                fontSize: '32px',
-                color: '#ff0000',
-                backgroundColor: '#000000',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5);
-
-        // Create final score text
-        const finalScoreText = this.add.text(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY,
-            `Final Score: ${this.player.getTotalDamage()}`,
-            {
-                fontSize: '28px',
-                color: '#ffffff',
-                backgroundColor: '#000000',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5);
-
-        // Create retry button
-        const retryButton = this.add.text(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY + 50,
-            'Retry',
-            {
-                fontSize: '24px',
-                color: '#ffffff',
-                backgroundColor: '#000000',
-                padding: { x: 20, y: 10 }
-            }
-        )
-        .setOrigin(0.5)
-        .setInteractive()
-        .setScrollFactor(0);
-
-        // Add hover effect
-        retryButton.on('pointerover', () => {
-            retryButton.setColor('#ffff00');
-        });
-
-        retryButton.on('pointerout', () => {
-            retryButton.setColor('#ffffff');
-        });
-
-        // Add click handler
-        retryButton.on('pointerdown', () => {
-            this.scene.restart();
-        });
-    }
-
     update(): void {
         if (this.isGameOver) return;
 
         // Update input handler (this will execute commands)
         this.inputHandler.update();
-        
+
         // Update player (this will check for steps)
         this.player.update();
 
@@ -225,39 +129,6 @@ export class GameScene extends Scene {
             this.spawnTimer = 0;
             this.collectibleSpawner.spawnRandomCollectible();
         }
-    }
-
-    private showAchievementUnlock(achievement: any): void {
-        // Create a temporary text to show achievement unlock
-        const text = this.add.text(
-            this.cameras.main.centerX,
-            100,
-            `Achievement Unlocked: ${achievement.title}!`,
-            {
-                fontSize: '32px',
-                color: '#ffffff',
-                backgroundColor: '#000000',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5);
-
-        // Animate the text
-        this.tweens.add({
-            targets: text,
-            y: 50,
-            duration: 1000,
-            ease: 'Power2',
-            onComplete: () => {
-                // Fade out and destroy
-                this.tweens.add({
-                    targets: text,
-                    alpha: 0,
-                    duration: 1000,
-                    delay: 2000,
-                    onComplete: () => text.destroy()
-                });
-            }
-        });
     }
 
     shutdown(): void {
@@ -283,9 +154,9 @@ export class GameScene extends Scene {
         });
 
         // Load character sprite sheets
-        this.load.spritesheet('character_idle', 'assets/character_idle.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('character_walk', 'assets/character_walk.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('character_run', 'assets/character_run.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('character_idle', 'assets/character_idle.png', {frameWidth: 32, frameHeight: 32});
+        this.load.spritesheet('character_walk', 'assets/character_walk.png', {frameWidth: 32, frameHeight: 32});
+        this.load.spritesheet('character_run', 'assets/character_run.png', {frameWidth: 32, frameHeight: 32});
 
         // Create particle texture
         const graphics = this.add.graphics();
@@ -293,5 +164,136 @@ export class GameScene extends Scene {
         graphics.fillCircle(4, 4, 4);
         graphics.generateTexture('particle', 8, 8);
         graphics.destroy();
+    }
+
+    private setupTimer(): void {
+        // Create timer text
+        this.timerText = this.add.text(20, this.cameras.main.height - 60, `Time: ${this.timeLeft}s`, {
+            fontSize: '24px',
+            color: '#ffffff',
+            backgroundColor: '#000000',
+            padding: {x: 10, y: 5}
+        });
+        this.timerText.setScrollFactor(0); // Keep timer fixed on screen
+
+        // Create timer event
+        this.timerEvent = this.time.addEvent({
+            delay: 1000,
+            callback: this.updateTimer,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+    private updateTimer(): void {
+        this.timeLeft--;
+        if (this.timerText) {
+            this.timerText.setText(`Time: ${this.timeLeft}s`);
+        }
+
+        if (this.timeLeft <= 0) {
+            this.gameOver();
+        }
+    }
+
+    private gameOver(): void {
+        this.isGameOver = true;
+
+        // Stop the timer
+        if (this.timerEvent) {
+            this.timerEvent.destroy();
+            this.timerEvent = null;
+        }
+
+        // Create game over text
+        const gameOverText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY - 50,
+            'Game Over, your boss caught you!',
+            {
+                fontSize: '32px',
+                color: '#ff0000',
+                backgroundColor: '#000000',
+                padding: {x: 20, y: 10}
+            }
+        ).setOrigin(0.5);
+
+        // Create final score text
+        const finalScoreText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            `Final Score: ${this.player.getTotalDamage()}`,
+            {
+                fontSize: '28px',
+                color: '#ffffff',
+                backgroundColor: '#000000',
+                padding: {x: 20, y: 10}
+            }
+        ).setOrigin(0.5);
+
+        // Create retry button
+        const retryButton = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY + 50,
+            'Retry',
+            {
+                fontSize: '24px',
+                color: '#ffffff',
+                backgroundColor: '#000000',
+                padding: {x: 20, y: 10}
+            }
+        )
+            .setOrigin(0.5)
+            .setInteractive()
+            .setScrollFactor(0);
+
+        // Add hover effect
+        retryButton.on('pointerover', () => {
+            retryButton.setColor('#ffff00');
+        });
+
+        retryButton.on('pointerout', () => {
+            retryButton.setColor('#ffffff');
+        });
+
+        // Add click handler
+        retryButton.on('pointerdown', () => {
+            // Reset player's score before restarting
+            this.player.reset();
+            this.scene.restart();
+        });
+    }
+
+    private showAchievementUnlock(achievement: any): void {
+        // Create a temporary text to show achievement unlock
+        const text = this.add.text(
+            this.cameras.main.centerX,
+            100,
+            `Achievement Unlocked: ${achievement.title}!`,
+            {
+                fontSize: '32px',
+                color: '#ffffff',
+                backgroundColor: '#000000',
+                padding: {x: 20, y: 10}
+            }
+        ).setOrigin(0.5);
+
+        // Animate the text
+        this.tweens.add({
+            targets: text,
+            y: 50,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => {
+                // Fade out and destroy
+                this.tweens.add({
+                    targets: text,
+                    alpha: 0,
+                    duration: 1000,
+                    delay: 2000,
+                    onComplete: () => text.destroy()
+                });
+            }
+        });
     }
 } 

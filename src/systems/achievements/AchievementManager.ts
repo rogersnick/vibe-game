@@ -1,4 +1,4 @@
-import { Achievement, AchievementEvent, AchievementObserver } from './types';
+import {Achievement, AchievementEvent, AchievementObserver} from './types';
 
 export class AchievementManager implements AchievementObserver {
     private achievements: Map<string, Achievement>;
@@ -8,6 +8,40 @@ export class AchievementManager implements AchievementObserver {
     constructor() {
         this.achievements = new Map();
         this.initializeAchievements();
+    }
+
+    public setOnUnlockCallback(callback: (achievement: Achievement) => void): void {
+        this.onUnlockCallback = callback;
+    }
+
+    public onAchievementEvent(event: AchievementEvent, data?: any): void {
+        switch (event) {
+            case AchievementEvent.LEVEL_COMPLETED:
+                this.handleLevelCompleted(data);
+                break;
+            case AchievementEvent.PLAYER_STEP:
+                this.handlePlayerStep();
+                break;
+            // Add more event handlers as needed
+        }
+    }
+
+    public onAchievementUnlocked(achievement: Achievement): void {
+        if (this.onUnlockCallback) {
+            this.onUnlockCallback(achievement);
+        }
+    }
+
+    public getAchievements(): Achievement[] {
+        return Array.from(this.achievements.values());
+    }
+
+    public getUnlockedAchievements(): Achievement[] {
+        return this.getAchievements().filter(a => a.isUnlocked);
+    }
+
+    public getStepCount(): number {
+        return this.stepCount;
     }
 
     private initializeAchievements(): void {
@@ -36,22 +70,6 @@ export class AchievementManager implements AchievementObserver {
         });
     }
 
-    public setOnUnlockCallback(callback: (achievement: Achievement) => void): void {
-        this.onUnlockCallback = callback;
-    }
-
-    public onAchievementEvent(event: AchievementEvent, data?: any): void {
-        switch (event) {
-            case AchievementEvent.LEVEL_COMPLETED:
-                this.handleLevelCompleted(data);
-                break;
-            case AchievementEvent.PLAYER_STEP:
-                this.handlePlayerStep();
-                break;
-            // Add more event handlers as needed
-        }
-    }
-
     private handleLevelCompleted(data: any): void {
         const firstSteps = this.achievements.get('first_steps');
         if (firstSteps && !firstSteps.isUnlocked) {
@@ -71,23 +89,5 @@ export class AchievementManager implements AchievementObserver {
                 this.onAchievementUnlocked(stepAchievement);
             }
         }
-    }
-
-    public onAchievementUnlocked(achievement: Achievement): void {
-        if (this.onUnlockCallback) {
-            this.onUnlockCallback(achievement);
-        }
-    }
-
-    public getAchievements(): Achievement[] {
-        return Array.from(this.achievements.values());
-    }
-
-    public getUnlockedAchievements(): Achievement[] {
-        return this.getAchievements().filter(a => a.isUnlocked);
-    }
-
-    public getStepCount(): number {
-        return this.stepCount;
     }
 } 

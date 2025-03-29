@@ -1,8 +1,8 @@
-import { Scene } from 'phaser';
-import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
-import { Inventory } from './Inventory';
-import { MovementConfig } from '../config/MovementConfig';
-import { CollectibleConfig } from '../config/CollectibleConfig';
+import {Scene} from 'phaser';
+import {AchievementEvent, AchievementObserver} from '../systems/achievements/types';
+import {Inventory} from './Inventory';
+import {MovementConfig} from '../config/MovementConfig';
+import {CollectibleConfig} from '../config/CollectibleConfig';
 
 export enum Direction {
     LEFT = 'left',
@@ -42,109 +42,6 @@ export class Player {
         this.setupInputHandling();
     }
 
-    private setupSprite(): void {
-        // Create the sprite
-        this.sprite = this.scene.add.sprite(this.x, this.y, 'character_idle');
-
-        this.sprite.setScale(2.0);
-
-        // Set up animations
-        // Idle animations for each direction
-        this.scene.anims.create({
-            key: 'idle_right',
-            frames: this.scene.anims.generateFrameNumbers('character_idle', { start: 0, end: 3 }),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        this.scene.anims.create({
-            key: 'idle_down',
-            frames: this.scene.anims.generateFrameNumbers('character_idle', { start: 4, end: 7 }),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        this.scene.anims.create({
-            key: 'idle_up',
-            frames: this.scene.anims.generateFrameNumbers('character_idle', { start: 8, end: 11 }),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        // Walk animations for each direction
-        this.scene.anims.create({
-            key: 'walk_right',
-            frames: this.scene.anims.generateFrameNumbers('character_walk', { start: 0, end: 7 }),
-            frameRate: 12,
-            repeat: -1
-        });
-
-        this.scene.anims.create({
-            key: 'walk_down',
-            frames: this.scene.anims.generateFrameNumbers('character_walk', { start: 8, end: 15 }),
-            frameRate: 12,
-            repeat: -1
-        });
-
-        this.scene.anims.create({
-            key: 'walk_up',
-            frames: this.scene.anims.generateFrameNumbers('character_walk', { start: 16, end: 23 }),
-            frameRate: 12,
-            repeat: -1
-        });
-
-        // Run animations for each direction
-        this.scene.anims.create({
-            key: 'run_right',
-            frames: this.scene.anims.generateFrameNumbers('character_run', { start: 0, end: 7 }),
-            frameRate: 16,
-            repeat: -1
-        });
-
-        this.scene.anims.create({
-            key: 'run_down',
-            frames: this.scene.anims.generateFrameNumbers('character_run', { start: 8, end: 15 }),
-            frameRate: 16,
-            repeat: -1
-        });
-
-        this.scene.anims.create({
-            key: 'run_up',
-            frames: this.scene.anims.generateFrameNumbers('character_run', { start: 16, end: 23 }),
-            frameRate: 16,
-            repeat: -1
-        });
-
-        // Start with idle down animation
-        this.sprite.play('idle_down');
-    }
-
-    private setupEquippedItemText(): void {
-        // Create text in top-right corner
-        this.equippedItemText = this.scene.add.text(
-            this.scene.cameras.main.width - 20,
-            20,
-            '',
-            {
-                fontSize: '16px',
-                color: '#ffffff',
-                backgroundColor: '#000000',
-                padding: { x: 8, y: 4 }
-            }
-        ).setOrigin(1, 0); // Right-aligned, top-anchored
-    }
-
-    private updateEquippedItemText(): void {
-        if (this.equippedItemText) {
-            if (this.equippedItem) {
-                this.equippedItemText.setText(`${this.equippedItem.name} (${this.equippedItem.uses} uses)`);
-                this.equippedItemText.setVisible(true);
-            } else {
-                this.equippedItemText.setVisible(false);
-            }
-        }
-    }
-
     addAchievementObserver(observer: AchievementObserver): void {
         this.achievementObserver = observer;
     }
@@ -167,6 +64,246 @@ export class Player {
 
         // Update animation based on direction
         this.updateAnimation();
+    }
+
+    stopMoving(key: string): void {
+        this.activeKeys.delete(key);
+        if (this.activeKeys.size === 0) {
+            this.dx = 0;
+            this.dy = 0;
+            this.updateAnimation();
+        }
+    }
+
+    setPosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+        this.sprite.setPosition(x, y);
+        this.dx = 0;
+        this.dy = 0;
+    }
+
+    update(): void {
+        // Calculate movement speed
+        const isDiagonal = this.dx !== 0 && this.dy !== 0;
+        const speedMultiplier = isDiagonal ? MovementConfig.diagonalSpeedMultiplier : 1;
+        const speed = MovementConfig.baseSpeed * speedMultiplier;
+
+        // Calculate new position
+        const newX = this.x + this.dx * speed;
+        const newY = this.y + this.dy * speed;
+
+        // Check if the new position would collide with any obstacles
+        const wouldCollide = this.checkCollision(newX, newY);
+
+        // Only update position if there's no collision
+        if (!wouldCollide) {
+            this.x = newX;
+            this.y = newY;
+        }
+
+        // Keep player within room boundaries
+        const layoutGenerator = (this.scene as any).layoutGenerator;
+        if (layoutGenerator) {
+            const room = layoutGenerator.getRoom();
+            if (room) {
+                const halfWidth = room.width / 2;
+                const halfHeight = room.height / 2;
+                this.x = Phaser.Math.Clamp(this.x, room.x - halfWidth + this.size / 2, room.x + halfWidth - this.size / 2);
+                this.y = Phaser.Math.Clamp(this.y, room.y - halfHeight + this.size / 2, room.y + halfHeight - this.size / 2);
+            }
+        }
+
+        // Update sprite position
+        this.sprite.setPosition(this.x, this.y);
+
+        // Check for steps (for achievement system)
+        if (this.dx !== 0 || this.dy !== 0) {
+            this.achievementObserver?.onAchievementEvent(AchievementEvent.PLAYER_STEP);
+        }
+    }
+
+    getPosition(): { x: number; y: number } {
+        return {x: this.x, y: this.y};
+    }
+
+    getInventory(): Inventory {
+        return this.inventory;
+    }
+
+    destroy(): void {
+        this.sprite.destroy();
+        if (this.equippedItemText) {
+            this.equippedItemText.destroy();
+        }
+    }
+
+    equipItem(item: CollectibleConfig): void {
+        // Unequip current item if any
+        this.unequipItem();
+
+        // Set new equipped item
+        this.equippedItem = item;
+
+        // Update visual representation
+        this.updateEquippedItemVisual();
+        this.updateEquippedItemText();
+    }
+
+    unequipItem(): void {
+        if (this.equippedItemSprite) {
+            this.equippedItemSprite.destroy();
+            this.equippedItemSprite = null;
+        }
+        this.equippedItem = null;
+        this.updateEquippedItemText();
+    }
+
+    useEquippedItem(): void {
+        if (!this.equippedItem || !this.isTouchingElement()) return;
+
+        const layoutGenerator = (this.scene as any).layoutGenerator;
+        if (!layoutGenerator) return;
+
+        // Get the element being touched using the larger interaction size
+        const touchedElement = layoutGenerator.getTouchedElement(this.x, this.y, this.interactionSize);
+        if (!touchedElement) return;
+
+        // Create hit animation
+        this.createHitAnimation(touchedElement.rectangle.x, touchedElement.rectangle.y);
+
+        // Apply damage based on item power
+        const damage = this.equippedItem.power;
+        touchedElement.element.hp -= damage;
+
+        // Add to total damage score
+        this.totalDamage += damage;
+
+        // Show damage popup
+        this.createDamagePopup(touchedElement.rectangle.x, touchedElement.rectangle.y, damage);
+
+        // Update element's visual representation
+        layoutGenerator.updateElementVisual(touchedElement);
+
+        // Decrease item uses
+        this.equippedItem.uses--;
+        this.updateEquippedItemText();
+
+        // Unequip if no uses left
+        if (this.equippedItem.uses <= 0) {
+            this.unequipItem();
+        }
+    }
+
+    getTotalDamage(): number {
+        return this.totalDamage;
+    }
+
+    reset(): void {
+        this.totalDamage = 0;
+    }
+
+    private setupSprite(): void {
+        // Create the sprite
+        this.sprite = this.scene.add.sprite(this.x, this.y, 'character_idle');
+
+        this.sprite.setScale(2.0);
+
+        // Set up animations
+        // Idle animations for each direction
+        this.scene.anims.create({
+            key: 'idle_right',
+            frames: this.scene.anims.generateFrameNumbers('character_idle', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'idle_down',
+            frames: this.scene.anims.generateFrameNumbers('character_idle', {start: 4, end: 7}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'idle_up',
+            frames: this.scene.anims.generateFrameNumbers('character_idle', {start: 8, end: 11}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        // Walk animations for each direction
+        this.scene.anims.create({
+            key: 'walk_right',
+            frames: this.scene.anims.generateFrameNumbers('character_walk', {start: 0, end: 7}),
+            frameRate: 12,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'walk_down',
+            frames: this.scene.anims.generateFrameNumbers('character_walk', {start: 8, end: 15}),
+            frameRate: 12,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'walk_up',
+            frames: this.scene.anims.generateFrameNumbers('character_walk', {start: 16, end: 23}),
+            frameRate: 12,
+            repeat: -1
+        });
+
+        // Run animations for each direction
+        this.scene.anims.create({
+            key: 'run_right',
+            frames: this.scene.anims.generateFrameNumbers('character_run', {start: 0, end: 7}),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'run_down',
+            frames: this.scene.anims.generateFrameNumbers('character_run', {start: 8, end: 15}),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        this.scene.anims.create({
+            key: 'run_up',
+            frames: this.scene.anims.generateFrameNumbers('character_run', {start: 16, end: 23}),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        // Start with idle down animation
+        this.sprite.play('idle_down');
+    }
+
+    private setupEquippedItemText(): void {
+        // Create text in top-right corner
+        this.equippedItemText = this.scene.add.text(
+            this.scene.cameras.main.width - 20,
+            20,
+            '',
+            {
+                fontSize: '16px',
+                color: '#ffffff',
+                backgroundColor: '#000000',
+                padding: {x: 8, y: 4}
+            }
+        ).setOrigin(1, 0); // Right-aligned, top-anchored
+    }
+
+    private updateEquippedItemText(): void {
+        if (this.equippedItemText) {
+            if (this.equippedItem) {
+                this.equippedItemText.setText(`${this.equippedItem.name} (${this.equippedItem.uses} uses)`);
+                this.equippedItemText.setVisible(true);
+            } else {
+                this.equippedItemText.setVisible(false);
+            }
+        }
     }
 
     private updateAnimation(): void {
@@ -214,63 +351,6 @@ export class Player {
         }
     }
 
-    stopMoving(key: string): void {
-        this.activeKeys.delete(key);
-        if (this.activeKeys.size === 0) {
-            this.dx = 0;
-            this.dy = 0;
-            this.updateAnimation();
-        }
-    }
-
-    setPosition(x: number, y: number): void {
-        this.x = x;
-        this.y = y;
-        this.sprite.setPosition(x, y);
-        this.dx = 0;
-        this.dy = 0;
-    }
-
-    update(): void {
-        // Calculate movement speed
-        const isDiagonal = this.dx !== 0 && this.dy !== 0;
-        const speedMultiplier = isDiagonal ? MovementConfig.diagonalSpeedMultiplier : 1;
-        const speed = MovementConfig.baseSpeed * speedMultiplier;
-
-        // Calculate new position
-        const newX = this.x + this.dx * speed;
-        const newY = this.y + this.dy * speed;
-
-        // Check if the new position would collide with any obstacles
-        const wouldCollide = this.checkCollision(newX, newY);
-
-        // Only update position if there's no collision
-        if (!wouldCollide) {
-            this.x = newX;
-            this.y = newY;
-        }
-
-        // Keep player within room boundaries
-        const layoutGenerator = (this.scene as any).layoutGenerator;
-        if (layoutGenerator) {
-            const room = layoutGenerator.getRoom();
-            if (room) {
-                const halfWidth = room.width / 2;
-                const halfHeight = room.height / 2;
-                this.x = Phaser.Math.Clamp(this.x, room.x - halfWidth + this.size/2, room.x + halfWidth - this.size/2);
-                this.y = Phaser.Math.Clamp(this.y, room.y - halfHeight + this.size/2, room.y + halfHeight - this.size/2);
-            }
-        }
-
-        // Update sprite position
-        this.sprite.setPosition(this.x, this.y);
-
-        // Check for steps (for achievement system)
-        if (this.dx !== 0 || this.dy !== 0) {
-            this.achievementObserver?.onAchievementEvent(AchievementEvent.PLAYER_STEP);
-        }
-    }
-
     private checkCollision(x: number, y: number): boolean {
         // Get all rectangles from the layout generator
         const layoutGenerator = (this.scene as any).layoutGenerator;
@@ -278,33 +358,6 @@ export class Player {
 
         // Use normal size for movement collision
         return layoutGenerator.checkCollision(x, y, this.size);
-    }
-
-    getPosition(): { x: number; y: number } {
-        return { x: this.x, y: this.y };
-    }
-
-    getInventory(): Inventory {
-        return this.inventory;
-    }
-
-    destroy(): void {
-        this.sprite.destroy();
-        if (this.equippedItemText) {
-            this.equippedItemText.destroy();
-        }
-    }
-
-    equipItem(item: CollectibleConfig): void {
-        // Unequip current item if any
-        this.unequipItem();
-        
-        // Set new equipped item
-        this.equippedItem = item;
-        
-        // Update visual representation
-        this.updateEquippedItemVisual();
-        this.updateEquippedItemText();
     }
 
     private updateEquippedItemVisual(): void {
@@ -322,23 +375,14 @@ export class Player {
                 8, // radius
                 this.equippedItem.color
             );
-            
+
             // Position the item sprite relative to the player
             const offsetX = this.dx < 0 ? -20 : 20;
             itemSprite.setPosition(this.x + offsetX, this.y);
-            
+
             // Store the item sprite reference
             this.equippedItemSprite = itemSprite;
         }
-    }
-
-    unequipItem(): void {
-        if (this.equippedItemSprite) {
-            this.equippedItemSprite.destroy();
-            this.equippedItemSprite = null;
-        }
-        this.equippedItem = null;
-        this.updateEquippedItemText();
     }
 
     private setupInputHandling(): void {
@@ -361,46 +405,6 @@ export class Player {
         return layoutGenerator.checkCollision(this.x, this.y, this.interactionSize);
     }
 
-    useEquippedItem(): void {
-        if (!this.equippedItem || !this.isTouchingElement()) return;
-
-        const layoutGenerator = (this.scene as any).layoutGenerator;
-        if (!layoutGenerator) return;
-
-        // Get the element being touched using the larger interaction size
-        const touchedElement = layoutGenerator.getTouchedElement(this.x, this.y, this.interactionSize);
-        if (!touchedElement) return;
-
-        // Create hit animation
-        this.createHitAnimation(touchedElement.rectangle.x, touchedElement.rectangle.y);
-
-        // Apply damage based on item power
-        const damage = this.equippedItem.power;
-        touchedElement.element.hp -= damage;
-        
-        // Add to total damage score
-        this.totalDamage += damage;
-
-        // Show damage popup
-        this.createDamagePopup(touchedElement.rectangle.x, touchedElement.rectangle.y, damage);
-
-        // Update element's visual representation
-        layoutGenerator.updateElementVisual(touchedElement);
-
-        // Decrease item uses
-        this.equippedItem.uses--;
-        this.updateEquippedItemText();
-
-        // Unequip if no uses left
-        if (this.equippedItem.uses <= 0) {
-            this.unequipItem();
-        }
-    }
-
-    getTotalDamage(): number {
-        return this.totalDamage;
-    }
-
     private createHitAnimation(x: number, y: number): void {
         // Create a circle that expands and fades out
         const hitCircle = this.scene.add.circle(x, y, 10, 0xFFFFFF);
@@ -410,10 +414,10 @@ export class Player {
         const particles = this.scene.add.particles(0, 0, 'particle', {
             x: x,
             y: y,
-            speed: { min: 100, max: 200 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.4, end: 0 },
-            alpha: { start: 0.8, end: 0 },
+            speed: {min: 100, max: 200},
+            angle: {min: 0, max: 360},
+            scale: {start: 0.4, end: 0},
+            alpha: {start: 0.8, end: 0},
             lifespan: 300,
             quantity: 8,
             blendMode: 'ADD'

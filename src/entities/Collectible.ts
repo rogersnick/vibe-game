@@ -1,5 +1,5 @@
-import { Scene } from 'phaser';
-import { Player } from './Player';
+import {Scene} from 'phaser';
+import {Player} from './Player';
 
 export type CollectibleCategory = 'healing' | 'power' | 'speed' | 'shield' | 'special';
 
@@ -30,13 +30,13 @@ export class Collectible {
         this.color = config.color;
         this.config = config;
         this.visual = scene.add.circle(x, y, this.radius, config.color);
-        
+
         // Add text label
         this.text = scene.add.text(x, y - 20, config.name, {
             fontSize: '12px',
             color: '#ffffff',
             backgroundColor: '#000000',
-            padding: { x: 4, y: 2 }
+            padding: {x: 4, y: 2}
         }).setOrigin(0.5, 0.5);
     }
 
@@ -45,7 +45,7 @@ export class Collectible {
     }
 
     getPosition(): { x: number; y: number } {
-        return { x: this.x, y: this.y };
+        return {x: this.x, y: this.y};
     }
 
     setPosition(x: number, y: number): void {
@@ -71,9 +71,16 @@ export class Collectible {
         }
     }
 
+    destroy(): void {
+        this.visual.destroy();
+        if (this.text) {
+            this.text.destroy();
+        }
+    }
+
     private collect(player: Player): void {
         this.isCollected = true;
-        
+
         // Add collectible to player's inventory
         player.getInventory().addItem({
             name: this.config.name,
@@ -85,7 +92,7 @@ export class Collectible {
 
         // Equip the item
         player.equipItem(this.config);
-        
+
         // Add collection effect
         this.scene.tweens.add({
             targets: [this.visual, this.text],
@@ -108,7 +115,7 @@ export class Collectible {
                 fontSize: '20px',
                 color: '#ffffff',
                 backgroundColor: '#000000',
-                padding: { x: 10, y: 5 }
+                padding: {x: 10, y: 5}
             }
         ).setOrigin(0.5, 0.5);
 
@@ -120,12 +127,5 @@ export class Collectible {
             delay: 500,
             onComplete: () => notification.destroy()
         });
-    }
-
-    destroy(): void {
-        this.visual.destroy();
-        if (this.text) {
-            this.text.destroy();
-        }
     }
 } 

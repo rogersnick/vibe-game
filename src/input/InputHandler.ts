@@ -1,110 +1,110 @@
-import { Scene, Input } from 'phaser';
-import { Command } from './Command';
+import {Scene} from 'phaser';
+import {Command} from './Command';
 
 export type KeyBinding = {
-  key: string;
-  command: Command;
-  isPressed: boolean;
-  isHeld?: boolean;
+    key: string;
+    command: Command;
+    isPressed: boolean;
+    isHeld?: boolean;
 };
 
 export class InputHandler {
-  private scene: Scene;
-  private keyBindings: Map<string, KeyBinding>;
-  private commandHistory: Command[];
-  private historySize: number;
-  private lastUpdate: number;
-  private activeCommands: Set<Command>;
+    private scene: Scene;
+    private keyBindings: Map<string, KeyBinding>;
+    private commandHistory: Command[];
+    private historySize: number;
+    private lastUpdate: number;
+    private activeCommands: Set<Command>;
 
-  constructor(scene: Scene, historySize: number = 100) {
-    this.scene = scene;
-    this.keyBindings = new Map();
-    this.commandHistory = [];
-    this.historySize = historySize;
-    this.lastUpdate = 0;
-    this.activeCommands = new Set();
-  }
+    constructor(scene: Scene, historySize: number = 100) {
+        this.scene = scene;
+        this.keyBindings = new Map();
+        this.commandHistory = [];
+        this.historySize = historySize;
+        this.lastUpdate = 0;
+        this.activeCommands = new Set();
+    }
 
-  bindKey(keyCode: string, command: Command, isHeld: boolean = false): void {
-    // Create the key binding
-    const binding: KeyBinding = {
-      key: keyCode,
-      command,
-      isPressed: false,
-      isHeld
-    };
+    bindKey(keyCode: string, command: Command, isHeld: boolean = false): void {
+        // Create the key binding
+        const binding: KeyBinding = {
+            key: keyCode,
+            command,
+            isPressed: false,
+            isHeld
+        };
 
-    // Add to our bindings map
-    this.keyBindings.set(keyCode, binding);
+        // Add to our bindings map
+        this.keyBindings.set(keyCode, binding);
 
-    // Set up the key in Phaser
-    const key = this.scene.input.keyboard!.addKey(keyCode);
+        // Set up the key in Phaser
+        const key = this.scene.input.keyboard!.addKey(keyCode);
 
-    // Handle key down
-    key.on('down', () => {
-      binding.isPressed = true;
-      if (!binding.isHeld) {
-        this.executeCommand(command, 0); // For non-held keys, delta doesn't matter
-      } else {
-        this.activeCommands.add(command);
-      }
-    });
+        // Handle key down
+        key.on('down', () => {
+            binding.isPressed = true;
+            if (!binding.isHeld) {
+                this.executeCommand(command, 0); // For non-held keys, delta doesn't matter
+            } else {
+                this.activeCommands.add(command);
+            }
+        });
 
-    // Handle key up
-    key.on('up', () => {
-      binding.isPressed = false;
-      if (binding.isHeld) {
-        this.activeCommands.delete(command);
-        // Call stop() on the command if it exists
-        if ('stop' in command) {
-          (command as any).stop();
+        // Handle key up
+        key.on('up', () => {
+            binding.isPressed = false;
+            if (binding.isHeld) {
+                this.activeCommands.delete(command);
+                // Call stop() on the command if it exists
+                if ('stop' in command) {
+                    (command as any).stop();
+                }
+            }
+        });
+    }
+
+    update(): void {
+        const currentTime = this.scene.time.now;
+        const delta = currentTime - this.lastUpdate;
+        this.lastUpdate = currentTime;
+
+        // Execute only active commands
+        this.activeCommands.forEach(command => {
+            this.executeCommand(command, delta);
+        });
+    }
+
+    undo(): void {
+        const command = this.commandHistory.pop();
+        if (command?.undo) {
+            command.undo();
         }
-      }
-    });
-  }
-
-  update(): void {
-    const currentTime = this.scene.time.now;
-    const delta = currentTime - this.lastUpdate;
-    this.lastUpdate = currentTime;
-
-    // Execute only active commands
-    this.activeCommands.forEach(command => {
-      this.executeCommand(command, delta);
-    });
-  }
-
-  private executeCommand(command: Command, delta: number): void {
-    command.execute(delta);
-    
-    // Add to history if the command supports undo
-    if (command.undo) {
-      this.commandHistory.push(command);
-      
-      // Keep history within size limit
-      if (this.commandHistory.length > this.historySize) {
-        this.commandHistory.shift();
-      }
     }
-  }
 
-  undo(): void {
-    const command = this.commandHistory.pop();
-    if (command?.undo) {
-      command.undo();
+    // Clean up event listeners when no longer needed
+    destroy(): void {
+        this.keyBindings.forEach((binding) => {
+            const key = this.scene.input.keyboard!.addKey(binding.key);
+            if (key) {
+                key.removeAllListeners();
+            }
+        });
+        this.keyBindings.clear();
+        this.commandHistory = [];
+        this.activeCommands.clear();
     }
-  }
 
-  // Clean up event listeners when no longer needed
-  destroy(): void {
-    this.keyBindings.forEach((binding) => {
-      const key = this.scene.input.keyboard!.addKey(binding.key);
-      if (key) {
-        key.removeAllListeners();
-      }
-    });
-    this.keyBindings.clear();
-    this.commandHistory = [];
-    this.activeCommands.clear();
-  }
+    private executeCommand(command: Command, delta: number): void {
+        command.execute(delta);
+
+        // Add to history if the command supports undo
+        if (command.undo) {
+            this.commandHistory.push(command);
+
+            // Keep history within size limit
+            if (this.commandHistory.length > this.historySize) {
+                this.commandHistory.shift();
+            }
+        }
+    }
 } 

@@ -1,4 +1,4 @@
-import { CollectibleCategory } from './Collectible';
+import {CollectibleCategory} from './Collectible';
 
 export interface InventoryItem {
     name: string;
@@ -21,7 +21,7 @@ export class Inventory {
 
     useItem(index: number): boolean {
         if (index < 0 || index >= this.items.length) return false;
-        
+
         const item = this.items[index];
         if (item.uses <= 0) return false;
 

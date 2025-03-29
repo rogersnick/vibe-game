@@ -21,11 +21,14 @@ export enum AchievementEvent {
 
 export interface AchievementSubject {
     addAchievementObserver(observer: AchievementObserver): void;
+
     removeAchievementObserver(observer: AchievementObserver): void;
+
     notifyAchievementObservers(event: AchievementEvent, data?: any): void;
 }
 
 export interface AchievementObserver {
     onAchievementEvent(event: AchievementEvent, data?: any): void;
+
     onAchievementUnlocked(achievement: Achievement): void;
 } 

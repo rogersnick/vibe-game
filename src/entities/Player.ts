@@ -15,7 +15,7 @@ export class Player {
     private x: number;
     private y: number;
     private baseSpeed: number = 2.5;
-    private speed: number = 2.5;
+    private speed: number = 5;
     private dx: number = 0;
     private dy: number = 0;
     private achievementObserver: AchievementObserver | null = null;
@@ -24,6 +24,7 @@ export class Player {
     private isRunning: boolean = false;
     private sprite!: Phaser.GameObjects.Sprite;
     private lastDirection: Direction = Direction.DOWN;
+    private size: number = 32;  // Player size for collision detection
 
     constructor(scene: Scene, x: number, y: number) {
         this.scene = scene;
@@ -191,6 +192,9 @@ export class Player {
     setPosition(x: number, y: number): void {
         this.x = x;
         this.y = y;
+        this.sprite.setPosition(x, y);
+        this.dx = 0;
+        this.dy = 0;
     }
 
     update(): void {

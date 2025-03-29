@@ -23,6 +23,16 @@ export class Player {
     private isRunning: boolean = false;
     private sprite!: Phaser.GameObjects.Sprite;
     private lastDirection: Direction = Direction.DOWN;
+    private isDead: boolean = false;
+    private maxEnergy: number = 100;
+    private currentEnergy: number = 100;
+    private energyDrainRate: number = 10; // Energy points per second when running
+    private walkEnergyDrainRate: number = 5; // Energy points per second when walking
+    private energyRegenRate: number = 0.5; // Energy points per second when not moving
+    private energyBar!: Phaser.GameObjects.Graphics;
+    private energyBarWidth: number = 64;
+    private energyBarHeight: number = 8;
+    private energyBarOffset: number = 40; // Offset from sprite center
 
     constructor(scene: Scene, x: number, y: number) {
         this.scene = scene;
@@ -30,6 +40,7 @@ export class Player {
         this.y = y;
         this.inventory = new Inventory();
         this.setupSprite();
+        this.setupEnergyBar();
     }
 
     private setupSprite(): void {
@@ -37,6 +48,13 @@ export class Player {
         this.sprite = this.scene.add.sprite(this.x, this.y, 'character_idle');
         
         this.sprite.setScale(2.0);
+        
+        // Set up animation completion listeners
+        this.sprite.on('animationcomplete', (animation: Phaser.Animations.Animation) => {
+            if (animation.key.startsWith('death_')) {
+                this.isDead = true;
+            }
+        });
         
         // Set up animations
         // Idle animations for each direction
@@ -105,8 +123,68 @@ export class Player {
             repeat: -1
         });
 
+        // Death animations for each direction
+        this.scene.anims.create({
+            key: 'death_right',
+            frames: this.scene.anims.generateFrameNumbers('character_death', { start: 0, end: 5 }),
+            frameRate: 12,
+            repeat: 0
+        });
+
+        this.scene.anims.create({
+            key: 'death_down',
+            frames: this.scene.anims.generateFrameNumbers('character_death', { start: 6, end: 11 }),
+            frameRate: 12,
+            repeat: 0
+        });
+
+        this.scene.anims.create({
+            key: 'death_up',
+            frames: this.scene.anims.generateFrameNumbers('character_death', { start: 12, end: 17 }),
+            frameRate: 12,
+            repeat: 0
+        });
+
         // Start with idle down animation
         this.sprite.play('idle_down');
+    }
+
+    private setupEnergyBar(): void {
+        // Create the energy bar graphics
+        this.energyBar = this.scene.add.graphics();
+        this.updateEnergyBar();
+    }
+
+    private updateEnergyBar(): void {
+        this.energyBar.clear();
+
+        // Background (gray)
+        this.energyBar.fillStyle(0x666666);
+        this.energyBar.fillRect(
+            this.x - this.energyBarWidth / 2,
+            this.y - this.energyBarOffset,
+            this.energyBarWidth,
+            this.energyBarHeight
+        );
+
+        // Energy level (blue)
+        const energyWidth = (this.currentEnergy / this.maxEnergy) * this.energyBarWidth;
+        this.energyBar.fillStyle(0x00ff00);
+        this.energyBar.fillRect(
+            this.x - this.energyBarWidth / 2,
+            this.y - this.energyBarOffset,
+            energyWidth,
+            this.energyBarHeight
+        );
+
+        // Border
+        this.energyBar.lineStyle(2, 0x000000);
+        this.energyBar.strokeRect(
+            this.x - this.energyBarWidth / 2,
+            this.y - this.energyBarOffset,
+            this.energyBarWidth,
+            this.energyBarHeight
+        );
     }
 
     addAchievementObserver(observer: AchievementObserver): void {
@@ -188,6 +266,18 @@ export class Player {
     }
 
     update(): void {
+        if (this.isDead) return;
+
+        // Update energy based on movement state
+        if (this.dx !== 0 || this.dy !== 0) {
+            // If moving, drain energy based on whether running or walking
+            const drainRate = this.isRunning ? this.energyDrainRate : this.walkEnergyDrainRate;
+            this.drainEnergy(drainRate / 60);
+        } else {
+            // If not moving, regenerate energy
+            this.addEnergy(this.energyRegenRate / 60);
+        }
+
         // Update position
         this.x += this.dx * this.speed;
         this.y += this.dy * this.speed;
@@ -200,6 +290,7 @@ export class Player {
 
         // Update sprite position
         this.sprite.setPosition(this.x, this.y);
+        this.updateEnergyBar();
 
         // Check for steps (for achievement system)
         if (this.dx !== 0 || this.dy !== 0) {
@@ -217,5 +308,59 @@ export class Player {
 
     destroy(): void {
         this.sprite.destroy();
+        this.energyBar.destroy();
+    }
+
+    die(): void {
+        if (this.isDead) return;
+        
+        this.dx = 0;
+        this.dy = 0;
+        this.activeKeys.clear();
+        
+        // Play death animation based on last direction
+        switch (this.lastDirection) {
+            case Direction.LEFT:
+                this.sprite.setFlipX(true);
+                this.sprite.play('death_right', true);
+                break;
+            case Direction.RIGHT:
+                this.sprite.setFlipX(false);
+                this.sprite.play('death_right', true);
+                break;
+            case Direction.DOWN:
+                this.sprite.setFlipX(false);
+                this.sprite.play('death_down', true);
+                break;
+            case Direction.UP:
+                this.sprite.setFlipX(false);
+                this.sprite.play('death_up', true);
+                break;
+        }
+    }
+
+    isPlayerDead(): boolean {
+        return this.isDead;
+    }
+
+    getEnergy(): number {
+        return this.currentEnergy;
+    }
+
+    getMaxEnergy(): number {
+        return this.maxEnergy;
+    }
+
+    addEnergy(amount: number): void {
+        this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + amount);
+        this.updateEnergyBar();
+    }
+
+    drainEnergy(amount: number): void {
+        this.currentEnergy = Math.max(0, this.currentEnergy - amount);
+        this.updateEnergyBar();
+        if (this.currentEnergy === 0 && !this.isDead) {
+            this.die();
+        }
     }
 } 

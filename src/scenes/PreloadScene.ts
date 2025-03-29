@@ -52,6 +52,11 @@ export class PreloadScene extends Scene {
         frameHeight: 80
     });
 
+    this.load.spritesheet('character_death', 'assets/character/death.png', {
+        frameWidth: 80,
+        frameHeight: 80
+    });
+
     // Create a temporary colored rectangle for the player (can be removed later)
     const graphics = this.add.graphics();
     graphics.fillStyle(0x00ff00);

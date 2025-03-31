@@ -1,5 +1,6 @@
 import { Achievement, AchievementEvent, AchievementObserver } from './types';
-import { Logger } from '../../utils/Logger';
+import createDebug from 'debug';
+const debug = createDebug('vibe:achievements');
 
 export class AchievementManager implements AchievementObserver {
     private achievements: Map<string, Achievement>;
@@ -16,7 +17,7 @@ export class AchievementManager implements AchievementObserver {
         this.achievements.set('first_steps', {
             id: 'first_steps',
             title: 'First Steps',
-            description: 'Complete your first level',
+            description: 'Complete your first steps',
             isUnlocked: false,
             progress: {
                 current: 0,
@@ -33,6 +34,17 @@ export class AchievementManager implements AchievementObserver {
             progress: {
                 current: 0,
                 target: 25
+            }
+        });
+
+        this.achievements.set('1k_club', {
+            id: '1k_club',
+            title: '1K Club',
+            description: 'Move 1000 steps',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 1000
             }
         });
 
@@ -76,7 +88,7 @@ export class AchievementManager implements AchievementObserver {
     }
 
     public onAchievementEvent(event: AchievementEvent, data?: any): void {
-        Logger.debug('Achievement event received:', event, data);
+        debug('Achievement event received:', event, data);
         switch (event) {
             case AchievementEvent.LEVEL_COMPLETED:
                 this.handleLevelCompleted(data);
@@ -106,7 +118,7 @@ export class AchievementManager implements AchievementObserver {
         // Update progress for all step-based achievements
         const stepAchievements = [
             'step_counter',
-            'wanderer',
+            '1k_club',
             'explorer',
             'marathon_runner'
         ];
@@ -124,14 +136,14 @@ export class AchievementManager implements AchievementObserver {
     }
 
     private handleCollectibleFound(data: any): void {
-        Logger.debug('Collectible found, current count:', data.itemCount);
+        debug('Collectible found, current count:', data.itemCount);
         const collector = this.achievements.get('collector');
         if (collector && collector.progress) {
             collector.progress.current = data.itemCount;
-            Logger.debug('Collector achievement progress:', collector.progress.current, '/', collector.progress.target);
+            debug('Collector achievement progress:', collector.progress.current, '/', collector.progress.target);
             
             if (collector.progress.current >= collector.progress.target && !collector.isUnlocked) {
-                Logger.debug('Unlocking collector achievement!');
+                debug('Unlocking collector achievement!');
                 this.unlockAchievement(collector);
             }
         }
@@ -140,7 +152,7 @@ export class AchievementManager implements AchievementObserver {
     private unlockAchievement(achievement: Achievement): void {
         if (!achievement.isUnlocked) {
             achievement.isUnlocked = true;
-            Logger.debug('Achievement unlocked:', achievement.title);
+            debug('Achievement unlocked:', achievement.title);
             if (this.onUnlockCallback) {
                 this.onUnlockCallback(achievement);
             }

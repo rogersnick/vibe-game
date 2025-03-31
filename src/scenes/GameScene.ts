@@ -106,7 +106,7 @@ export class GameScene extends Scene {
 
     private showAchievementUnlock(achievement: any): void {
         // Create a container for the achievement notification
-        const container = this.add.container(this.cameras.main.centerX, -100);
+        const container = this.add.container(this.cameras.main.centerX, this.cameras.main.height + 100);
         
         // Create a background box
         const box = this.add.rectangle(0, 0, 400, 80, 0x000000, 0.8);
@@ -137,7 +137,7 @@ export class GameScene extends Scene {
         // Animate the notification
         this.tweens.add({
             targets: container,
-            y: 100,
+            y: this.cameras.main.height - 100,
             duration: 800,
             ease: 'Back.out',
             onComplete: () => {
@@ -145,7 +145,7 @@ export class GameScene extends Scene {
                 this.time.delayedCall(2000, () => {
                     this.tweens.add({
                         targets: container,
-                        y: -100,
+                        y: this.cameras.main.height + 100,
                         alpha: 0,
                         duration: 600,
                         ease: 'Back.in',
@@ -158,7 +158,7 @@ export class GameScene extends Scene {
         // Add a particle effect
         const particles = this.add.particles(0, 0, 'particle', {
             x: this.cameras.main.centerX,
-            y: 100,
+            y: this.cameras.main.height - 100,
             speed: { min: 200, max: 400 },
             angle: { min: 0, max: 360 },
             scale: { start: 0.6, end: 0 },

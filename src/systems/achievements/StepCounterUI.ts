@@ -35,9 +35,10 @@ export class StepCounterUI {
         const itemCount = this.inventory.getItemCount();
         const achievements = this.achievementManager.getAchievements();
         
-        // Find the next locked step achievement
+        // Find the next locked step achievement, sorted by target value
         const nextAchievement = achievements
-            .filter(a => a.id.startsWith('step_counter') || a.id === 'wanderer' || a.id === 'explorer' || a.id === 'marathon_runner')
+            .filter(a => a.id === 'step_counter' || a.id === '1k_club' || a.id === 'explorer' || a.id === 'marathon_runner')
+            .sort((a, b) => (a.progress?.target || 0) - (b.progress?.target || 0))
             .find(a => !a.isUnlocked);
 
         if (nextAchievement) {

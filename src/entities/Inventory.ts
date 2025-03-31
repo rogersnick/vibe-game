@@ -1,4 +1,5 @@
-import { Logger } from '../utils/Logger';
+import createDebug from 'debug';
+const debug = createDebug('vibe:inventory');
 
 export class Inventory {
     private items: number = 0;
@@ -6,12 +7,12 @@ export class Inventory {
 
     addItem(): void {
         this.items++;
-        Logger.debug('Inventory addItem called, count:', this.items);
+        debug('Inventory addItem called, count:', this.items);
         if (this.onItemCollected) {
-            Logger.debug('Calling onItemCollected callback');
+            debug('Calling onItemCollected callback');
             this.onItemCollected(this.items);
         } else {
-            Logger.warn('No onItemCollected callback set');
+            debug('No onItemCollected callback set');
         }
     }
 

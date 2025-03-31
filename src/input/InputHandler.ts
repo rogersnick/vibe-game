@@ -1,4 +1,4 @@
-import { Scene, Input } from 'phaser';
+import { Scene } from 'phaser';
 import { Command } from './Command';
 
 export type KeyBinding = {

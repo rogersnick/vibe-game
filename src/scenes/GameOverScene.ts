@@ -61,8 +61,8 @@ export class GameOverScene extends Scene {
             }
         });
 
-        // Add "Press SPACE to restart" with pulsing animation
-        const restartText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 150, 
+        // Add "Press SPACE to restart" at the bottom with pulsing animation
+        const restartText = this.add.text(this.cameras.main.centerX, this.cameras.main.height - 50, 
             'Press SPACE to restart', {
             font: '24px Arial',
             color: '#ffffff',
@@ -70,6 +70,16 @@ export class GameOverScene extends Scene {
             strokeThickness: 4
         }).setOrigin(0.5);
         this.container.add(restartText);
+
+        // Add pulsing animation to restart text
+        this.tweens.add({
+            targets: restartText,
+            alpha: 0.5,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
 
         // Add particle effects
         const particles = this.add.particles(0, 0, 'particle', {

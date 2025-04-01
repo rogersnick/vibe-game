@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { AchievementEvent, AchievementObserver } from '../systems/achievements/types';
 import { Inventory } from './Inventory';
 import createDebug from 'debug';
+import { ServiceLocator } from '../core/services/ServiceLocator';
+import { GameEventType, GameOverEventData, PlayerMoveEventData, PlayerStopEventData, PlayerEnergyChangeEventData, PlayerDeathEventData } from '../core/events/GameEvent';
 const debug = createDebug('vibe:player');
 
 export enum Direction {
@@ -160,10 +162,6 @@ export class Player {
         // Start with idle down animation
         this.sprite.play('idle_down');
 
-        // Set up animation completion listener after all animations are created
-        this.sprite.on('animationcomplete', (animation: Phaser.Animations.Animation) => {
-            this.onDeathAnimationComplete(animation);
-        });
     }
 
     private setupEnergyBar(): void {
@@ -214,6 +212,10 @@ export class Player {
         this.speed = this.baseSpeed * (running ? 2 : 1);
     }
 
+    private getEventQueue() {
+        return ServiceLocator.getInstance().getEventQueue();
+    }
+
     move(dx: number, dy: number, key: string): void {
         this.activeKeys.add(key);
         this.dx = dx;
@@ -227,6 +229,15 @@ export class Player {
 
         // Update animation based on direction
         this.updateAnimation();
+
+        // Emit PLAYER_MOVE event
+        const moveData: PlayerMoveEventData = {
+            dx,
+            dy,
+            isRunning: this.isRunning,
+            direction: this.lastDirection
+        };
+        this.getEventQueue().emit(GameEventType.PLAYER_MOVE, moveData);
     }
 
     private updateAnimation(): void {
@@ -282,6 +293,12 @@ export class Player {
             this.dx = 0;
             this.dy = 0;
             this.updateAnimation();
+
+            // Emit PLAYER_STOP event
+            const stopData: PlayerStopEventData = {
+                lastDirection: this.lastDirection
+            };
+            this.getEventQueue().emit(GameEventType.PLAYER_STOP, stopData);
         }
     }
 
@@ -358,11 +375,23 @@ export class Player {
                 break;
         }
 
-        // Start game over scene after death animation (about 1 second)
-        this.scene.time.delayedCall(1000, () => {
-            this.isDead = true;
-            this.scene.scene.start('GameOverScene', { inventory: this.inventory });
-        });
+        this.isDead = true;
+
+        // Emit PLAYER_DEATH event
+        const deathData: PlayerDeathEventData = {
+            reason: 'Player death',
+            lastDirection: this.lastDirection,
+            finalEnergy: this.currentEnergy
+        };
+        this.getEventQueue().emit(GameEventType.PLAYER_DEATH, deathData);
+
+        // Emit GAME_OVER event
+        const gameOverData: GameOverEventData = {
+            inventory: this.inventory,
+            achievements: [], // We'll get achievements from the GameScene instead
+            reason: 'Player death'
+        };
+        this.getEventQueue().emit(GameEventType.GAME_OVER, gameOverData);
     }
 
     isPlayerDead(): boolean {
@@ -380,23 +409,34 @@ export class Player {
     addEnergy(amount: number): void {
         this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + amount);
         this.updateEnergyBar();
+
+        // Emit PLAYER_ENERGY_CHANGE event
+        const energyData: PlayerEnergyChangeEventData = {
+            currentEnergy: this.currentEnergy,
+            maxEnergy: this.maxEnergy,
+            changeAmount: amount,
+            isDrain: false
+        };
+        this.getEventQueue().emit(GameEventType.PLAYER_ENERGY_CHANGE, energyData);
     }
 
     drainEnergy(amount: number): void {
         this.currentEnergy = Math.max(0, this.currentEnergy - amount);
         this.updateEnergyBar();
+
+        // Emit PLAYER_ENERGY_CHANGE event
+        const energyData: PlayerEnergyChangeEventData = {
+            currentEnergy: this.currentEnergy,
+            maxEnergy: this.maxEnergy,
+            changeAmount: amount,
+            isDrain: true
+        };
+        this.getEventQueue().emit(GameEventType.PLAYER_ENERGY_CHANGE, energyData);
+
         if (this.currentEnergy === 0 && !this.isDead) {
             this.die();
         }
     }
 
-    private onDeathAnimationComplete(animation: Phaser.Animations.Animation): void {
-        debug('Animation completed:', animation.key);
-        if (animation.key === 'death') {
-            debug('Death animation completed, starting game over');
-            this.scene.scene.start('GameOverScene', {
-                inventory: this.inventory
-            });
-        }
-    }
+
 } 

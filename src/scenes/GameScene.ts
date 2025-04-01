@@ -5,6 +5,8 @@ import { StepCounterUI } from '../systems/achievements/StepCounterUI';
 import { InputHandler } from '../input/InputHandler';
 import { MoveCommand } from '../input/commands/MoveCommand';
 import { CollectibleSpawner } from '../entities/CollectibleSpawner';
+import { ServiceLocator } from '../core/services/ServiceLocator';
+import { GameEventType } from '../core/events/GameEvent';
 
 export class GameScene extends Scene {
     private player!: Player;
@@ -65,6 +67,15 @@ export class GameScene extends Scene {
         for (let i = 0; i < 5; i++) {
             this.collectibleSpawner.spawnRandomCollectible();
         }
+
+        // Set up GAME_OVER event listener
+        const eventQueue = ServiceLocator.getInstance().getEventQueue();
+        eventQueue.subscribe(GameEventType.GAME_OVER, (event) => {
+            // Add achievements to the event data
+            event.data.achievements = this.achievementManager.getAchievements();
+            // Start the game over scene with the event data
+            this.scene.start('GameOverScene', event.data);
+        });
     }
 
     update(): void {

@@ -120,7 +120,7 @@ export class GameOverScene extends Scene {
                 duration: 1000,
                 ease: 'Power2',
                 onComplete: () => {
-                    this.scene.start('GameScene');
+                    this.scene.start('MenuScene');
                 }
             });
         });

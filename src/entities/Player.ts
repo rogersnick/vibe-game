@@ -68,7 +68,7 @@ export class Player {
         // Create the sprite
         this.sprite = this.scene.add.sprite(this.x, this.y, 'character_idle');
         
-        this.sprite.setScale(2.0);
+        this.sprite.setScale(3.0);
         
         // Set up animations
         // Idle animations for each direction
@@ -227,8 +227,32 @@ export class Player {
         else if (dy > 0) this.lastDirection = Direction.DOWN;
         else if (dy < 0) this.lastDirection = Direction.UP;
 
-        // Update animation based on direction
-        this.updateAnimation();
+        // Update animation based on direction and running state
+        if (this.isRunning) {
+            // When running, maintain the running animation
+            const prefix = 'run_';
+            switch (this.lastDirection) {
+                case Direction.LEFT:
+                    this.sprite.setFlipX(true);
+                    this.sprite.play(prefix + 'right', true);
+                    break;
+                case Direction.RIGHT:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play(prefix + 'right', true);
+                    break;
+                case Direction.DOWN:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play(prefix + 'down', true);
+                    break;
+                case Direction.UP:
+                    this.sprite.setFlipX(false);
+                    this.sprite.play(prefix + 'up', true);
+                    break;
+            }
+        } else {
+            // When not running, use normal animation logic
+            this.updateAnimation();
+        }
 
         // Emit PLAYER_MOVE event
         const moveData: PlayerMoveEventData = {
@@ -388,7 +412,6 @@ export class Player {
         // Emit GAME_OVER event
         const gameOverData: GameOverEventData = {
             inventory: this.inventory,
-            achievements: [], // We'll get achievements from the GameScene instead
             reason: 'Player death'
         };
         this.getEventQueue().emit(GameEventType.GAME_OVER, gameOverData);

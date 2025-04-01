@@ -1,6 +1,8 @@
 import { Scene } from 'phaser';
 import { Collectible } from './Collectible';
 import { Player } from './Player';
+import { ServiceLocator } from '../core/services/ServiceLocator';
+import { GameEventType, CollectibleSpawnedEventData } from '../core/events/GameEvent';
 
 export class CollectibleSpawner {
     private scene: Scene;
@@ -15,11 +17,24 @@ export class CollectibleSpawner {
         this.prototype = new Collectible(scene, -100, -100);
     }
 
+    private getEventQueue() {
+        return ServiceLocator.getInstance().getEventQueue();
+    }
+
     spawnCollectible(x: number, y: number): Collectible {
         // Clone the prototype and position it
         const collectible = this.prototype.clone();
         collectible.setPosition(x, y);
         this.collectibles.push(collectible);
+
+        // Emit COLLECTIBLE_SPAWNED event
+        const spawnData: CollectibleSpawnedEventData = {
+            x,
+            y,
+            type: 'default' // We can expand this later with different collectible types
+        };
+        this.getEventQueue().emit(GameEventType.COLLECTIBLE_SPAWNED, spawnData);
+
         return collectible;
     }
 

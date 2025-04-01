@@ -6,7 +6,7 @@ import { InputHandler } from '../input/InputHandler';
 import { MoveCommand } from '../input/commands/MoveCommand';
 import { CollectibleSpawner } from '../entities/CollectibleSpawner';
 import { ServiceLocator } from '../core/services/ServiceLocator';
-import { GameEventType } from '../core/events/GameEvent';
+import { GameEventType, GameStartEventData } from '../core/events/GameEvent';
 
 export class GameScene extends Scene {
     private player!: Player;
@@ -64,18 +64,22 @@ export class GameScene extends Scene {
         this.collectibleSpawner = new CollectibleSpawner(this, this.player);
         
         // Spawn initial collectibles
-        for (let i = 0; i < 5; i++) {
+        const initialCollectibles = 5;
+        for (let i = 0; i < initialCollectibles; i++) {
             this.collectibleSpawner.spawnRandomCollectible();
         }
 
-        // Set up GAME_OVER event listener
+        // Emit GAME_START event
         const eventQueue = ServiceLocator.getInstance().getEventQueue();
-        eventQueue.subscribe(GameEventType.GAME_OVER, (event) => {
-            // Add achievements to the event data
-            event.data.achievements = this.achievementManager.getAchievements();
-            // Start the game over scene with the event data
-            this.scene.start('GameOverScene', event.data);
-        });
+        const startData: GameStartEventData = {
+            playerPosition: { x: centerX, y: centerY },
+            initialCollectibles,
+            difficulty: 'normal' // We can make this configurable later
+        };
+        eventQueue.emit(GameEventType.GAME_START, startData);
+
+        // Set up GAME_OVER event listener
+        eventQueue.subscribe(GameEventType.GAME_OVER, this.handleGameOver.bind(this));
     }
 
     update(): void {

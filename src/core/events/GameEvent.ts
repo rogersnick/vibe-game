@@ -32,7 +32,6 @@ export interface GameEventCallback {
 
 export interface GameOverEventData {
     inventory: Inventory;
-    achievements: any[]; // Replace with proper Achievement type
     reason?: string;
 }
 
@@ -58,4 +57,36 @@ export interface PlayerDeathEventData {
     reason: string;
     lastDirection: string;
     finalEnergy: number;
+}
+
+export interface CollectibleSpawnedEventData {
+    x: number;
+    y: number;
+    type: string; // We can expand this later with different collectible types
+}
+
+export interface CollectibleCollectedEventData {
+    x: number;
+    y: number;
+    type: string;
+    totalCollected: number;
+}
+
+export interface GameStartEventData {
+    playerPosition: { x: number; y: number };
+    initialCollectibles: number;
+    difficulty?: string; // We can use this later if we add difficulty levels
+}
+
+export interface AchievementUnlockedEventData {
+    achievementId: string;
+    title: string;
+    description: string;
+    timestamp: number;
+}
+
+export interface AchievementProgressEventData {
+    achievementId: string;
+    currentProgress: number;
+    targetProgress: number;
 } 

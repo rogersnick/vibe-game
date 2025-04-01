@@ -1,12 +1,14 @@
 import { Scene } from 'phaser';
 import { Player } from './Player';
 import createDebug from 'debug';
+import { ServiceLocator } from '../core/services/ServiceLocator';
+import { GameEventType, CollectibleCollectedEventData } from '../core/events/GameEvent';
 const debug = createDebug('vibe:collectible');
 
 interface CollectibleVisuals {
-    circle: Phaser.GameObjects.Ellipse;
-    glow: Phaser.GameObjects.Ellipse;
-    trail: Phaser.GameObjects.Ellipse[];
+    circle: Phaser.GameObjects.Rectangle;
+    glow: Phaser.GameObjects.Rectangle;
+    trail: Phaser.GameObjects.Rectangle[];
 }
 
 export class Collectible {
@@ -15,7 +17,7 @@ export class Collectible {
     private y: number;
     private visuals: CollectibleVisuals;
     private isCollected: boolean = false;
-    private readonly radius: number = 12;
+    private readonly radius: number = 10;
     private readonly glowSizeMultiplier: number = 1.8;
     private readonly glowOpacity: number = 0.25;
     private readonly trailLength: number = 4;
@@ -27,17 +29,23 @@ export class Collectible {
         this.x = x;
         this.y = y;
         
-        // Create main circle
-        const circle = scene.add.ellipse(x, y, this.radius, this.radius, 0x00ff00, this.baseOpacity);
+        // Create main square (instead of circle) with pixelated edges
+        const circle = scene.add.rectangle(x, y, this.radius * 2, this.radius * 2, 0x00ff00, this.baseOpacity);
+        circle.setStrokeStyle(2, 0x00ff00);
+        circle.setOrigin(0.5);
         
-        // Create glow effect
-        const glow = scene.add.ellipse(x, y, this.radius * this.glowSizeMultiplier, this.radius * this.glowSizeMultiplier, 0x00ff00, this.glowOpacity);
+        // Create glow effect with pixelated edges
+        const glow = scene.add.rectangle(x, y, this.radius * 2 * this.glowSizeMultiplier, this.radius * 2 * this.glowSizeMultiplier, 0x00ff00, this.glowOpacity);
+        glow.setStrokeStyle(2, 0x00ff00);
+        glow.setOrigin(0.5);
         
-        // Create trail
-        const trail: Phaser.GameObjects.Ellipse[] = [];
+        // Create trail with pixelated edges
+        const trail: Phaser.GameObjects.Rectangle[] = [];
         for (let i = 0; i < this.trailLength; i++) {
-            const trailCircle = scene.add.ellipse(x, y, this.radius * 0.8, this.radius * 0.8, 0x00ff00, this.baseOpacity * 0.5);
-            trail.push(trailCircle);
+            const trailSquare = scene.add.rectangle(x, y, this.radius * 1.6, this.radius * 1.6, 0x00ff00, this.baseOpacity * 0.5);
+            trailSquare.setStrokeStyle(2, 0x00ff00);
+            trailSquare.setOrigin(0.5);
+            trail.push(trailSquare);
         }
 
         this.visuals = { circle, glow, trail };
@@ -103,6 +111,10 @@ export class Collectible {
         }
     }
 
+    private getEventQueue() {
+        return ServiceLocator.getInstance().getEventQueue();
+    }
+
     private collect(player: Player): void {
         debug('Collectible collected - Starting collection process');
         this.isCollected = true;
@@ -113,6 +125,15 @@ export class Collectible {
         debug('New inventory count after adding:', newCount);
         player.addEnergy(5); // Add 5 energy points
         debug('Item added to inventory and energy increased by 5');
+        
+        // Emit COLLECTIBLE_COLLECTED event
+        const collectData: CollectibleCollectedEventData = {
+            x: this.x,
+            y: this.y,
+            type: 'default',
+            totalCollected: newCount
+        };
+        this.getEventQueue().emit(GameEventType.COLLECTIBLE_COLLECTED, collectData);
         
         // Enhanced collection effect
         const targets = [this.visuals.circle, this.visuals.glow, ...this.visuals.trail];

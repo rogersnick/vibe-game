@@ -1,5 +1,7 @@
 import { Achievement, AchievementEvent, AchievementObserver } from './types';
 import createDebug from 'debug';
+import { ServiceLocator } from '../../core/services/ServiceLocator';
+import { GameEventType, AchievementUnlockedEventData, AchievementProgressEventData } from '../../core/events/GameEvent';
 const debug = createDebug('vibe:achievements');
 
 export class AchievementManager implements AchievementObserver {
@@ -10,6 +12,10 @@ export class AchievementManager implements AchievementObserver {
     constructor() {
         this.achievements = new Map();
         this.initializeAchievements();
+    }
+
+    private getEventQueue() {
+        return ServiceLocator.getInstance().getEventQueue();
     }
 
     private initializeAchievements(): void {
@@ -114,6 +120,18 @@ export class AchievementManager implements AchievementObserver {
                 target: 50
             }
         });
+
+        // Emit initial progress events for all achievements
+        this.achievements.forEach(achievement => {
+            if (achievement.progress) {
+                const progressData: AchievementProgressEventData = {
+                    achievementId: achievement.id,
+                    currentProgress: achievement.progress.current,
+                    targetProgress: achievement.progress.target
+                };
+                this.getEventQueue().emit(GameEventType.ACHIEVEMENT_PROGRESS, progressData);
+            }
+        });
     }
 
     public setOnUnlockCallback(callback: (achievement: Achievement) => void): void {
@@ -139,9 +157,8 @@ export class AchievementManager implements AchievementObserver {
     private handleLevelCompleted(data: any): void {
         const firstSteps = this.achievements.get('first_steps');
         if (firstSteps && !firstSteps.isUnlocked) {
-            firstSteps.isUnlocked = true;
             firstSteps.progress!.current = 1;
-            this.onAchievementUnlocked(firstSteps);
+            this.unlockAchievement(firstSteps);
         }
     }
 
@@ -160,6 +177,15 @@ export class AchievementManager implements AchievementObserver {
             const achievement = this.achievements.get(achievementId);
             if (achievement && !achievement.isUnlocked) {
                 achievement.progress!.current = this.stepCount;
+                
+                // Emit progress event
+                const progressData: AchievementProgressEventData = {
+                    achievementId: achievement.id,
+                    currentProgress: achievement.progress!.current,
+                    targetProgress: achievement.progress!.target
+                };
+                this.getEventQueue().emit(GameEventType.ACHIEVEMENT_PROGRESS, progressData);
+
                 if (this.stepCount >= achievement.progress!.target) {
                     achievement.isUnlocked = true;
                     this.onAchievementUnlocked(achievement);
@@ -186,6 +212,14 @@ export class AchievementManager implements AchievementObserver {
                 achievement.progress.current = data.itemCount;
                 debug(`AchievementManager: Updated ${achievementId} progress:`, achievement.progress.current, '/', achievement.progress.target);
                 
+                // Emit progress event
+                const progressData: AchievementProgressEventData = {
+                    achievementId: achievement.id,
+                    currentProgress: achievement.progress.current,
+                    targetProgress: achievement.progress.target
+                };
+                this.getEventQueue().emit(GameEventType.ACHIEVEMENT_PROGRESS, progressData);
+                
                 if (achievement.progress.current >= achievement.progress.target && !achievement.isUnlocked) {
                     debug(`AchievementManager: Unlocking ${achievementId} achievement!`);
                     this.unlockAchievement(achievement);
@@ -199,6 +233,16 @@ export class AchievementManager implements AchievementObserver {
             achievement.isUnlocked = true;
             achievement.unlockedAt = Date.now();
             debug('Achievement unlocked:', achievement.title);
+
+            // Emit achievement unlocked event
+            const unlockData: AchievementUnlockedEventData = {
+                achievementId: achievement.id,
+                title: achievement.title,
+                description: achievement.description,
+                timestamp: achievement.unlockedAt
+            };
+            this.getEventQueue().emit(GameEventType.ACHIEVEMENT_UNLOCKED, unlockData);
+
             if (this.onUnlockCallback) {
                 this.onUnlockCallback(achievement);
             }
@@ -206,7 +250,17 @@ export class AchievementManager implements AchievementObserver {
     }
 
     public onAchievementUnlocked(achievement: Achievement): void {
-        console.log('Achievement unlocked:', achievement.title); // Debug log
+        debug('Achievement unlocked:', achievement.title);
+        
+        // Emit achievement unlocked event
+        const unlockData: AchievementUnlockedEventData = {
+            achievementId: achievement.id,
+            title: achievement.title,
+            description: achievement.description,
+            timestamp: achievement.unlockedAt || Date.now()
+        };
+        this.getEventQueue().emit(GameEventType.ACHIEVEMENT_UNLOCKED, unlockData);
+
         if (this.onUnlockCallback) {
             this.onUnlockCallback(achievement);
         }

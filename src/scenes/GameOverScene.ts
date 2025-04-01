@@ -53,12 +53,15 @@ export class GameOverScene extends Scene {
         const achievementsContainer = this.add.container(this.cameras.main.centerX, this.cameras.main.centerY + 20);
         this.container.add(achievementsContainer);
 
-        // Display each achievement
-        this.achievements.forEach((achievement, index) => {
-            if (achievement.isUnlocked) {
-                const achievementContainer = this.createAchievementDisplay(achievement, index);
-                achievementsContainer.add(achievementContainer);
-            }
+        // Get unlocked achievements and sort them by unlock time
+        const unlockedAchievements = this.achievements
+            .filter(a => a.isUnlocked)
+            .sort((a, b) => (a.unlockedAt || 0) - (b.unlockedAt || 0));
+
+        // Display each achievement in order, without gaps
+        unlockedAchievements.forEach((achievement, index) => {
+            const achievementContainer = this.createAchievementDisplay(achievement, index);
+            achievementsContainer.add(achievementContainer);
         });
 
         // Add "Press SPACE to restart" at the bottom with pulsing animation

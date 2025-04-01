@@ -3,17 +3,15 @@ const debug = createDebug('vibe:inventory');
 
 export class Inventory {
     private items: number = 0;
-    private onItemCollected: ((count: number) => void) | null = null;
+    private callbacks: ((count: number) => void)[] = [];
 
     addItem(): void {
         this.items++;
-        debug('Inventory addItem called, count:', this.items);
-        if (this.onItemCollected) {
-            debug('Calling onItemCollected callback');
-            this.onItemCollected(this.items);
-        } else {
-            debug('No onItemCollected callback set');
-        }
+        debug('Inventory: addItem called, count:', this.items);
+        this.callbacks.forEach(callback => {
+            debug('Inventory: Calling callback with count:', this.items);
+            callback(this.items);
+        });
     }
 
     getItemCount(): number {
@@ -21,6 +19,8 @@ export class Inventory {
     }
 
     setOnItemCollectedCallback(callback: (count: number) => void): void {
-        this.onItemCollected = callback;
+        debug('Inventory: Adding new item collected callback');
+        this.callbacks.push(callback);
+        debug('Inventory: Callback added, current count:', this.items);
     }
 } 

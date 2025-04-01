@@ -28,7 +28,7 @@ export class GameScene extends Scene {
         this.player = new Player(this, centerX, centerY);
         
         // Connect player to achievement system
-        this.player.addAchievementObserver(this.achievementManager);
+        this.player.setAchievementObserver(this.achievementManager);
         
         // Create UI
         this.stepCounterUI = new StepCounterUI(this, this.achievementManager, this.player.getInventory());
@@ -141,8 +141,39 @@ export class GameScene extends Scene {
             duration: 800,
             ease: 'Back.out',
             onComplete: () => {
+                // Add subtle particle effects from the sides
+                const leftParticles = this.add.particles(0, 0, 'particle', {
+                    x: this.cameras.main.centerX - 200,
+                    y: this.cameras.main.height - 100,
+                    speed: { min: 50, max: 100 },
+                    angle: { min: -30, max: 30 },
+                    scale: { start: 0.2, end: 0 },
+                    alpha: { start: 0.5, end: 0 },
+                    lifespan: 800,
+                    frequency: 100,
+                    quantity: 1,
+                    blendMode: 'ADD',
+                    tint: 0x00ff00
+                });
+
+                const rightParticles = this.add.particles(0, 0, 'particle', {
+                    x: this.cameras.main.centerX + 200,
+                    y: this.cameras.main.height - 100,
+                    speed: { min: 50, max: 100 },
+                    angle: { min: 150, max: 210 },
+                    scale: { start: 0.2, end: 0 },
+                    alpha: { start: 0.5, end: 0 },
+                    lifespan: 800,
+                    frequency: 100,
+                    quantity: 1,
+                    blendMode: 'ADD',
+                    tint: 0x00ff00
+                });
+
                 // Wait a bit then animate out
                 this.time.delayedCall(2000, () => {
+                    leftParticles.destroy();
+                    rightParticles.destroy();
                     this.tweens.add({
                         targets: container,
                         y: this.cameras.main.height + 100,
@@ -154,23 +185,6 @@ export class GameScene extends Scene {
                 });
             }
         });
-        
-        // Add a particle effect
-        const particles = this.add.particles(0, 0, 'particle', {
-            x: this.cameras.main.centerX,
-            y: this.cameras.main.height - 100,
-            speed: { min: 200, max: 400 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.6, end: 0 },
-            alpha: { start: 1, end: 0 },
-            lifespan: 1000,
-            quantity: 20,
-            blendMode: 'ADD',
-            tint: 0x00ff00
-        });
-        
-        // Destroy particles after animation
-        this.time.delayedCall(1000, () => particles.destroy());
     }
 
     shutdown(): void {

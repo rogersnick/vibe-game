@@ -37,23 +37,29 @@ export class Player {
     private energyBarOffset: number = 40; // Offset from sprite center
 
     constructor(scene: Scene, x: number, y: number) {
+        debug('Player: Constructor called');
         this.scene = scene;
         this.x = x;
         this.y = y;
         this.inventory = new Inventory();
+        debug('Player: Inventory created, setting up callback');
         this.setupSprite();
         this.setupEnergyBar();
         
         // Set up inventory callback for achievements
-        this.inventory.setOnItemCollectedCallback((count) => {
-            debug('Item collected, count:', count);
+        const callback = (count: number) => {
+            debug('Player: Item collected callback triggered, count:', count);
             if (this.achievementObserver) {
-                debug('Notifying achievement observer');
+                debug('Player: Achievement observer exists, sending COLLECTIBLE_FOUND event');
                 this.achievementObserver.onAchievementEvent(AchievementEvent.COLLECTIBLE_FOUND, { itemCount: count });
             } else {
-                debug('No achievement observer set');
+                debug('Player: ERROR - No achievement observer set!');
             }
-        });
+        };
+        debug('Player: Created callback function');
+        this.inventory.setOnItemCollectedCallback(callback);
+        debug('Player: Callback set on inventory');
+        debug('Player: Constructor completed');
     }
 
     private setupSprite(): void {
@@ -198,7 +204,8 @@ export class Player {
         );
     }
 
-    addAchievementObserver(observer: AchievementObserver): void {
+    setAchievementObserver(observer: AchievementObserver): void {
+        debug('Player: Setting achievement observer');
         this.achievementObserver = observer;
     }
 

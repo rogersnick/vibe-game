@@ -3,6 +3,7 @@ export interface Achievement {
     title: string;
     description: string;
     isUnlocked: boolean;
+    unlockedAt?: number; // Timestamp when the achievement was unlocked
     icon?: string;
     progress?: {
         current: number;

@@ -26,9 +26,9 @@ export class AchievementManager implements AchievementObserver {
         });
 
         // Add step counter achievements
-        this.achievements.set('step_counter', {
-            id: 'step_counter',
-            title: 'Step Counter',
+        this.achievements.set('groove_starter', {
+            id: 'groove_starter',
+            title: 'Groove Starter',
             description: 'Move 25 steps',
             isUnlocked: false,
             progress: {
@@ -37,20 +37,9 @@ export class AchievementManager implements AchievementObserver {
             }
         });
 
-        this.achievements.set('1k_club', {
-            id: '1k_club',
-            title: '1K Club',
-            description: 'Move 1000 steps',
-            isUnlocked: false,
-            progress: {
-                current: 0,
-                target: 1000
-            }
-        });
-
-        this.achievements.set('explorer', {
-            id: 'explorer',
-            title: 'Explorer',
+        this.achievements.set('rhythm_master', {
+            id: 'rhythm_master',
+            title: 'Rhythm Master',
             description: 'Move 600 steps',
             isUnlocked: false,
             progress: {
@@ -59,9 +48,20 @@ export class AchievementManager implements AchievementObserver {
             }
         });
 
-        this.achievements.set('marathon_runner', {
-            id: 'marathon_runner',
-            title: 'Marathon Runner',
+        this.achievements.set('dance_machine', {
+            id: 'dance_machine',
+            title: 'Dance Machine',
+            description: 'Move 1000 steps',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 1000
+            }
+        });
+
+        this.achievements.set('eternal_dancer', {
+            id: 'eternal_dancer',
+            title: 'Eternal Dancer',
             description: 'Move 10000 steps',
             isUnlocked: false,
             progress: {
@@ -71,14 +71,47 @@ export class AchievementManager implements AchievementObserver {
         });
 
         // Add item collection achievements
-        this.achievements.set('collector', {
-            id: 'collector',
-            title: 'Collector',
+        this.achievements.set('good_vibes', {
+            id: 'good_vibes',
+            title: 'Good Vibes',
             description: 'Collect 5 items',
             isUnlocked: false,
             progress: {
                 current: 0,
                 target: 5
+            }
+        });
+
+        this.achievements.set('radiant_vibes', {
+            id: 'radiant_vibes',
+            title: 'Radiant Vibes',
+            description: 'Collect 15 items',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 15
+            }
+        });
+
+        this.achievements.set('immaculate_vibes', {
+            id: 'immaculate_vibes',
+            title: 'Immaculate Vibes',
+            description: 'Collect 30 items',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 30
+            }
+        });
+
+        this.achievements.set('transcendent_vibes', {
+            id: 'transcendent_vibes',
+            title: 'Transcendent Vibes',
+            description: 'Collect 50 items',
+            isUnlocked: false,
+            progress: {
+                current: 0,
+                target: 50
             }
         });
     }
@@ -117,10 +150,10 @@ export class AchievementManager implements AchievementObserver {
         
         // Update progress for all step-based achievements
         const stepAchievements = [
-            'step_counter',
-            '1k_club',
-            'explorer',
-            'marathon_runner'
+            'groove_starter',
+            'rhythm_master',
+            'dance_machine',
+            'eternal_dancer'
         ];
 
         stepAchievements.forEach(achievementId => {
@@ -136,22 +169,35 @@ export class AchievementManager implements AchievementObserver {
     }
 
     private handleCollectibleFound(data: any): void {
-        debug('Collectible found, current count:', data.itemCount);
-        const collector = this.achievements.get('collector');
-        if (collector && collector.progress) {
-            collector.progress.current = data.itemCount;
-            debug('Collector achievement progress:', collector.progress.current, '/', collector.progress.target);
-            
-            if (collector.progress.current >= collector.progress.target && !collector.isUnlocked) {
-                debug('Unlocking collector achievement!');
-                this.unlockAchievement(collector);
+        debug('AchievementManager: Collectible found event received');
+        debug('AchievementManager: Current item count from data:', data.itemCount);
+
+        // List of all collection-based achievements
+        const collectionAchievements = [
+            'good_vibes',
+            'radiant_vibes',
+            'immaculate_vibes',
+            'transcendent_vibes'
+        ];
+
+        collectionAchievements.forEach(achievementId => {
+            const achievement = this.achievements.get(achievementId);
+            if (achievement && achievement.progress) {
+                achievement.progress.current = data.itemCount;
+                debug(`AchievementManager: Updated ${achievementId} progress:`, achievement.progress.current, '/', achievement.progress.target);
+                
+                if (achievement.progress.current >= achievement.progress.target && !achievement.isUnlocked) {
+                    debug(`AchievementManager: Unlocking ${achievementId} achievement!`);
+                    this.unlockAchievement(achievement);
+                }
             }
-        }
+        });
     }
 
     private unlockAchievement(achievement: Achievement): void {
         if (!achievement.isUnlocked) {
             achievement.isUnlocked = true;
+            achievement.unlockedAt = Date.now();
             debug('Achievement unlocked:', achievement.title);
             if (this.onUnlockCallback) {
                 this.onUnlockCallback(achievement);

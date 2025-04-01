@@ -98,14 +98,19 @@ export class Collectible {
         );
 
         if (distance < this.radius + 16) { // 16 is player radius
+            debug('Collection threshold met, calling collect');
             this.collect(player);
         }
     }
 
     private collect(player: Player): void {
-        debug('Collectible collected');
+        debug('Collectible collected - Starting collection process');
         this.isCollected = true;
+        const currentCount = player.getInventory().getItemCount();
+        debug('Current inventory count before adding:', currentCount);
         player.getInventory().addItem();
+        const newCount = player.getInventory().getItemCount();
+        debug('New inventory count after adding:', newCount);
         player.addEnergy(5); // Add 5 energy points
         debug('Item added to inventory and energy increased by 5');
         
